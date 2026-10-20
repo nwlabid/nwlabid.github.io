@@ -1,0 +1,479 @@
+1hostname_ip.java
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+public class a {
+    public static void main(String[] args){
+        try{
+            InetAddress lh=InetAddress.getLocalHost();
+
+            String ip=lh.getHostAddress();
+            String hn=lh.getHostName();
+
+            System.out.printf("%s\n%s",ip,hn);
+        }
+        catch(UnknownHostException e){
+            System.out.println(e);
+        }
+    }
+}
+
+2ip_gw.java
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+public class c {
+    public static void main(String[] args) throws Exception {
+        String gateway = getGatewayIp();
+        System.out.println("Gateway IP: " + gateway);
+        String mac = getMacAddress(gateway);
+        System.out.println("Gateway MAC: " + mac);
+    }
+    static String getGatewayIp() throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(new ProcessBuilder("ipconfig").start().getInputStream()));
+        String line;
+        while ((line = br.readLine()) != null) {
+            if (line.contains("Default Gateway")) {
+                String ip = line.split(":")[1].trim();
+                if (!ip.isEmpty()) return ip;
+
+                line = br.readLine();
+                if (line != null && !line.trim().isEmpty())
+                    return line.trim();
+            }
+        }
+        return null;
+    }
+    static String getMacAddress(String ip) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(new ProcessBuilder("arp", "-a", ip).start().getInputStream()));
+        String line;
+        while ((line = br.readLine()) != null) {
+            if (line.trim().startswith(ip)) {
+                return line.trim().split("\\s+")[1];
+            }
+        }
+        return null;
+    }
+}
+
+3ip_dns.java
+
+import java.util.*;
+import java.net.*;
+import java.io.*;
+public class a {
+    public static void main(String[] args) throws Exception{
+        InetAddress ip = InetAddress.getLocalHost();
+        String hn = ip.getHostName();
+        String ipAddress = ip.getHostAddress();
+        System.out.println("Host Name: " + hn);
+        System.out.println("IP Address: " + ipAddress);
+        String line;
+        BufferedReader br = new BufferedReader(new InputStreamReader(new ProcessBuilder("ipconfig","/all").start().getInputStream()));
+        while((line = br.readLine()) != null) {
+            if(line.contains("DNS Servers")) {
+                System.out.println(line.split(":")[1].trim());
+            }
+            else if(true){
+                if(!line.trim().isEmpty()&&line.trim().contains(".")||line.trim().contains(":")){
+                    System.out.println(line.trim());
+                }
+            }
+        }
+        String inp = new Scanner(System.in).nextLine();
+        InetAddress ip1 = InetAddress.getByName(inp);
+        System.out.println("Resolved IP Address: " + ip1.getHostAddress());
+        System.out.println("Resolved Host Name: " + ip1.getHostname());
+    }
+}
+
+
+4ports.java
+
+import java.io.IOException;
+import java.net.Socket;
+import java.util.HashMap;
+
+public class port {
+    public static void main(String[] args) {
+        String host = "localhost";
+        int sp = 1;
+        int ep = 1024;
+
+        HashMap<Integer, String> pu = new HashMap<>();
+
+        pu.put(20, "FTP");
+        pu.put(21, "SFTP");
+        pu.put(22, "SSH");
+        pu.put(23, "TELNET");
+        pu.put(25, "SMTP");
+        pu.put(53, "DNS");
+        pu.put(80, "HTTP");
+        pu.put(110, "POP3");
+        pu.put(143, "IMAP");
+        pu.put(443, "HTTPS");
+        pu.put(3306, "MySQL");
+
+        for (int i = sp; i <= ep; i++) {
+            try (Socket socket = new Socket(host, i)) {
+                String usage = pu.getOrDefault(i, "Unknown");
+                System.out.println("Port " + i + " is open. Usage: " + usage);
+            } catch (IOException e) {
+                // Port is closed or filtered
+            }
+        }
+        System.out.println("Port scanning completed.");
+    }
+}
+
+5chatcl.java
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+class Client {
+    public static void main(String args[]) throws Exception {
+        Socket s = new Socket("localhost", 5000);
+        Scanner sc = new Scanner(System.in);
+        DataInputStream in = new DataInputStream(s.getInputStream());
+        DataOutputStream out = new DataOutputStream(s.getOutputStream());
+        String msg = "";
+        while (true) {
+            System.out.print("Client: ");
+            msg = sc.nextLine();
+            out.writeUTF(msg);
+            if (msg.equals("exit"))
+                break;
+            System.out.println("Server: " + in.readUTF());
+        }
+        s.close();
+    }
+}
+
+5chatser.java
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+class Server {
+    public static void main(String args[]) throws Exception {
+        ServerSocket ss = new ServerSocket(5000);
+        Socket s = ss.accept();
+        Scanner sc = new Scanner(System.in);
+        DataInputStream in = new DataInputStream(s.getInputStream());
+        DataOutputStream out = new DataOutputStream(s.getOutputStream());
+        while (true) {
+            String msg = in.readUTF();
+            System.out.println("Client: " + msg);
+            if (msg.equals("exit"))
+                break;
+            System.out.print("Server: ");
+            msg = sc.nextLine();
+            out.writeUTF(msg);
+            if (msg.equals("exit"))
+                break;
+        }
+        s.close();
+        ss.close();
+        sc.close();
+    }
+}
+
+
+6echocl.java
+
+import java.io.*;
+import java.net.*;
+public class c {
+    public static void main(String[] args) throws Exception {
+        Socket s = new Socket("localhost", 5000);
+        BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+        PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+        System.out.println("Connected to server");
+        while (true) {
+            System.out.print("Enter command: ");
+            String req = keyboard.readLine();
+            out.println(req);
+            String response = in.readLine();
+            System.out.println("Server: " + response);
+            if (req.equalsIgnoreCase("exit")) {
+                break;
+            }
+        }
+        s.close();
+    }
+}
+
+6echoser.java
+
+import java.util.*;
+public class s {
+    public static void main(String[] args) throws Exception {
+        ServerSocket ss = new ServerSocket(5000);
+        System.out.println("Server started");
+        Socket s = ss.accept();
+        String req;
+        BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+        System.out.println("Connected");
+        while ((req = in.readLine()) != null) {
+            System.out.println("Client: " + req);
+            if (req.startsWith("echo ")) {
+                String m = req.substring(5);
+                out.println("echo: " + m);
+            }
+            else if (req.startsWith("ping ")) {
+                String ip = req.substring(5).trim();
+                try {
+                    InetAddress ad = InetAddress.getByName(ip);
+                    println("Pinging " + ad + "...");
+                    boolean result = ad.isReachable(5000);
+                    if (result) {
+                        out.println(ip + " is reachable");
+                    }
+                    else {
+                        out.println(ip + " is not reachable");
+                    }
+                }
+                catch (Exception e) {
+                    out.println("Invalid IP address");
+                }
+            }
+            else if (req.equalsIgnoreCase("time")) {
+                out.println(new Date());
+            }
+            // (code continues off-screen)
+        }
+    }
+}
+
+
+7tcpfilecl.java
+
+import java.io.*;
+import java.net.*;
+public class Client {
+    public static void main(String[] args) throws Exception {
+        String serverIP = "10.10.19.102";
+        String fileName = "test.png";
+        Socket socket = new Socket(serverIP, 5000);
+        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+        File file = new File(fileName);
+        FileInputStream in = new FileInputStream(file);
+        out.writeUTF(file.getName());
+        out.writeLong(file.length());
+        byte[] buffer = new byte[4096];
+        int bytes;
+        while ((bytes = in.read(buffer)) != -1) {
+            out.write(buffer, 0, bytes);
+        }
+        out.flush();
+        System.out.println("File sent successfully");
+        in.close();
+        out.close();
+        socket.close();
+    }
+}
+
+
+7tcpfileser.java
+
+
+import java.io.*;
+import java.net.*;
+public class Server {
+    public static void main(String[] args) throws Exception {
+        ServerSocket server = new ServerSocket(5000);
+        Socket socket = server.accept();
+        DataInputStream in = new DataInputStream(socket.getInputStream());
+        String fileName = in.readUTF();
+        long fileSize = in.readLong();
+        FileOutputStream file = new FileOutputStream("received_" + fileName);
+        byte[] buffer = new byte[4096];
+        long total = 0;
+        int bytes;
+        while (total < fileSize) {
+            bytes = in.read(buffer);
+            if (bytes == -1)
+                break;
+            file.write(buffer, 0, bytes);
+            total += bytes;
+        }
+        file.close();
+        in.close();
+        socket.close();
+        server.close();
+        System.out.println("File received successfully");
+    }
+}
+
+
+
+8udpcl.java
+
+
+import java.net.*;
+import java.io.*;
+public class udpc {
+    public static void main(String[] args) throws Exception {
+        DatagramSocket socket = new DatagramSocket();
+        FileInputStream file = new FileInputStream("test.txt");
+        byte[] buffer = new byte[65507];
+        int size = file.read(buffer);
+        InetAddress ip = InetAddress.getByName("10.10.19.102");
+        DatagramPacket packet = new DatagramPacket(buffer, size, ip, 5000);
+        socket.send(packet);
+        file.close();
+        socket.close();
+        System.out.println("File sent");
+    }
+}
+
+
+8udpser.java
+
+
+import java.net.*;
+import java.io.*;
+public class udps {
+    public static void main(String[] args) throws Exception {
+        DatagramSocket socket = new DatagramSocket(5000);
+        byte[] buffer = new byte[65507];
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+        socket.receive(packet);
+        FileOutputStream file = new FileOutputStream("received.txt");
+        file.write(packet.getData(), 0, packet.getLength());
+        file.close();
+        socket.close();
+        System.out.println("File received");
+    }
+}
+
+
+Calculator.java
+
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface Calculator extends Remote {
+    int add(int a, int b) throws RemoteException;
+    int sub(int a, int b) throws RemoteException;
+    int mul(int a, int b) throws RemoteException;
+    int div(int a, int b) throws RemoteException;
+}
+
+
+CalculatorImpl.java
+
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+
+public class CalculatorImpl extends UnicastRemoteObject implements Calculator {
+    public CalculatorImpl() throws RemoteException {
+        super();
+    }
+    public int add(int a, int b) throws RemoteException { return a + b; }
+    public int sub(int a, int b) throws RemoteException { return a - b; }
+    public int mul(int a, int b) throws RemoteException { return a * b; }
+    public int div(int a, int b) throws RemoteException {
+        if (b == 0) {
+            throw new ArithmeticException("Cannot divide by zero");
+        }
+        return a / b;
+    }
+}
+
+
+Server.java
+
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.net.InetAddress;
+
+public class Server {
+    public static void main(String[] args) {
+        try {
+            CalculatorImpl obj = new CalculatorImpl();
+            Registry registry = LocateRegistry.createRegistry(1099);
+            registry.rebind("calculator", obj);
+
+            InetAddress ip = InetAddress.getLocalHost();
+            System.out.println("--------------------------------");
+            System.out.println("    CALCULATOR RMI SERVER     ");
+            System.out.println("--------------------------------");
+            System.out.println("Server Name : " + ip.getHostName());
+            System.out.println("Server IP   : " + ip.getHostAddress());
+            System.out.println("Port        : 1099");
+            System.out.println("Service     : calculator");
+            System.out.println("Status      : Running");
+            System.out.println("--------------------------------");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+Client.java
+
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.util.Scanner;
+
+public class Client {
+    public static void main(String[] args) {
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+            Calculator cal = (Calculator) registry.lookup("calculator");
+            Scanner sc = new Scanner(System.in);
+
+            while (true) {
+                System.out.println("\n--------------------------------");
+                System.out.println("       RMI CALCULATOR           ");
+                System.out.println("--------------------------------");
+                System.out.println("1. Addition");
+                System.out.println("2. Subtraction");
+                System.out.println("3. Multiplication");
+                System.out.println("4. Division");
+                System.out.println("5. Exit");
+                System.out.println("--------------------------------");
+                System.out.print("Enter choice: ");
+
+                int c = sc.nextInt();
+                if (c == 5) {
+                    System.out.println("Client exited.");
+                    break;
+                }
+                if (c < 1 || c > 4) {
+                    System.out.println("Invalid choice.");
+                    continue;
+                }
+
+                System.out.print("Enter number 1: ");
+                int a = sc.nextInt();
+                System.out.print("Enter number 2: ");
+                int b = sc.nextInt();
+
+                switch (c) {
+                    case 1:
+                        System.out.println("Addition: " + cal.add(a, b));
+                        break;
+                    case 2:
+                        System.out.println("Subtraction: " + cal.sub(a, b));
+                        break;
+                    case 3:
+                        System.out.println("Multiplication: " + cal.mul(a, b));
+                        break;
+                    case 4:
+                        System.out.println("Division: " + cal.div(a, b));
+                        break;
+                }
+            }
+            sc.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
