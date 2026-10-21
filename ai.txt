@@ -231,6 +231,34 @@ print("Best Tour:")
 print(*(best, best[0]))
 print("Minimum Cost =", cost(best))
 
+simulated annealing custom f(x).py
+
+import random
+import math
+
+def f(x):
+    return x*x - 4*x + 4
+
+x = random.randint(-10, 10)
+best = x
+T = 1000
+
+while T > 1:
+    new = x + random.uniform(-1, 1)
+    d = f(new) - f(x)
+
+    if d < 0 or random.random() < math.exp(-d / T):
+        x = new
+
+    if f(x) < f(best):
+        best = x
+
+    T *= 0.95
+
+print("Best x =", best)
+print("Minimum value =", f(best))
+
+
 
 waterjug.py
 
