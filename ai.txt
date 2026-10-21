@@ -1,0 +1,547 @@
+astar.py
+
+
+import heapq
+
+n = int(input("enter no of nodes: "))
+graph = []
+for _ in range(n):
+    graph.append(list(map(int, input().split())))
+
+print("enter heuristic values:")
+h = list(map(int, input().split()))
+
+start, goal = map(int, input("enter start and end node: ").split())
+pq = [(h[start], 0, start, [start])]
+visited = set()
+
+while pq:
+    f, g, node, path = heapq.heappop(pq)
+    
+    if node == goal:
+        print("path: " + "->".join(map(str, path)))
+        print("cost:", g)
+        break
+        
+    if node in visited:
+        continue
+    visited.add(node)
+    
+    for i in range(n):
+        if graph[node][i] != 0 and i not in visited:
+            new_g = g + graph[node][i]
+            new_f = new_g + h[i]
+            heapq.heappush(pq, (new_f, new_g, i, path + [i]))
+else:
+    print("No path found")
+
+
+
+ucs.py
+
+
+
+import heapq
+
+n = int(input("Enter number of nodes: "))
+print("Enter the cost adjacency matrix (0 for no edge):")
+graph = []
+for i in range(n):
+    graph.append(list(map(int, input().split())))
+
+start = int(input("Enter start node: "))
+goal = int(input("Enter goal node: "))
+pq = [(0, start, [start])]
+visited = [False] * n
+
+while pq:
+    cost, node, path = heapq.heappop(pq)
+    
+    if visited[node]:
+        continue
+    visited[node] = True
+    
+    if node == goal:
+        print("\nGoal Found!")
+        print("Path:", " -> ".join(map(str, path)))
+        print("Cost:", cost)
+        break
+        
+    for i in range(n):
+        if graph[node][i] > 0 and not visited[i]:
+            heapq.heappush(pq, (cost + graph[node][i], i, path + [i]))
+else:
+    print("Goal not found!")
+
+
+
+
+bfs.py
+
+
+
+n = int(input("Enter number of nodes: "))
+print("Enter adjacency matrix:")
+graph = []
+for i in range(n):
+    graph.append(list(map(int, input().split())))
+
+print("Enter heuristic values:")
+h = list(map(int, input().split()))
+
+start = int(input("Enter start node: "))
+goal = int(input("Enter goal node: "))
+cur = start
+
+print("\nPath:", cur, end=" ")
+
+while cur != goal:
+    nxt = cur
+    for i in range(n):
+        if graph[cur][i] == 1 and h[i] < h[nxt]:
+            nxt = i
+            
+    if nxt == cur:
+        print("\nLocal Optimum Reached. Goal not found.")
+        break
+        
+    cur = nxt
+    print("->", cur, end=" ")
+    
+    if cur == goal:
+        print("\nGlobal Optimum Reached. Goal Found.")
+
+
+
+minimax tictactoe.py
+
+
+board = []
+
+def evaluate():
+    for i in range(3):
+        if board[i][0] == board[i][1] == board[i][2]:
+            if board[i][0] == 'X':
+                return 10
+            if board[i][0] == 'O':
+                return -10
+                
+    for j in range(3):
+        if board[0][j] == board[1][j] == board[2][j]:
+            if board[0][j] == 'X':
+                return 10
+            if board[0][j] == 'O':
+                return -10
+                
+    if board[0][0] == board[1][1] == board[2][2]:
+        if board[0][0] == 'X':
+            return 10
+        if board[0][0] == 'O':
+            return -10
+            
+    if board[0][2] == board[1][1] == board[2][0]:
+        if board[0][2] == 'X':
+            return 10
+        if board[0][2] == 'O':
+            return -10
+            
+    return 0
+
+def minimax(depth, isMax):
+    score = evaluate()
+    if score != 0 or depth == 0:
+        return score
+        
+    if isMax:
+        best = -1000
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == '_':
+                    board[i][j] = 'X'
+                    best = max(best, minimax(depth - 1, False))
+                    board[i][j] = '_'
+        return best
+    else:
+        best = 1000
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == '_':
+                    board[i][j] = 'O'
+                    best = min(best, minimax(depth - 1, True))
+                    board[i][j] = '_'
+        return best
+
+def bestMove():
+    best = -1000
+    r = c = -1
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == '_':
+                board[i][j] = 'X'
+                val = minimax(2, False)
+                board[i][j] = '_'
+                if val > best:
+                    best = val
+                    r, c = i, j
+                    
+    print("Best Move:", r, c)
+
+print("Enter board:")
+for i in range(3):
+    board.append(input().split())
+bestMove()
+
+
+
+simulated annealing.py
+
+
+import random
+import math
+
+n = int(input())
+graph = []
+for i in range(n):
+    graph.append(list(map(int, input().split())))
+
+def cost(path):
+    s = 0
+    for i in range(n - 1):
+        s += graph[path[i]][path[i + 1]]
+    s += graph[path[-1]][path[0]]
+    return s
+
+path = list(range(n))
+best = path[:]
+T = 1000
+
+while T > 1:
+    new = path[:]
+    i = random.randint(0, n - 1)
+    j = random.randint(0, n - 1)
+    new[i], new[j] = new[j], new[i]
+    d = cost(new) - cost(path)
+    if d < 0 or random.random() < math.exp(-d / T):
+        path = new[:]
+    if cost(path) < cost(best):
+        best = path[:]
+    T *= 0.95
+
+print("Best Tour:")
+print(*(best, best[0]))
+print("Minimum Cost =", cost(best))
+
+
+waterjug.py
+
+
+cap_a = int(input("Enter capacity of Jug A: "))
+cap_b = int(input("Enter capacity of Jug B: "))
+target = int(input("Enter target amount: "))
+queue = [((0, 0), [])]
+visited = {(0, 0)}
+
+while queue:
+    (a, b), path = queue.pop(0)
+    if a == target or b == target:
+        print("\nSolution Found!")
+        for step in path:
+            print(step)
+        print("Final State:", (a, b))
+        break
+        
+    states = [
+        ((cap_a, b), "Fill A"),
+        ((a, cap_b), "Fill B"),
+        ((0, b), "Empty A"),
+        ((a, 0), "Empty B"),
+        (
+            (max(0, a - (cap_b - b)), min(cap_b, a + b)),
+            "Pour A -> B"
+        ),
+        (
+            (min(cap_a, a + b), max(0, b - (cap_a - a))),
+            "Pour B -> A"
+        )
+    ]
+    
+    for new_state, action in states:
+        if new_state not in visited:
+            visited.add(new_state)
+            queue.append(
+                (new_state, path + [f"{action} -> {new_state}"])
+            )
+else:
+    print("No solution exists.")
+
+
+cryptarithmetic.py
+
+
+def solve(a, b, c):
+    letters = set(a + b + c)
+    letters = list(letters)
+    
+    def backtrack(i, used, mp):
+        if i == len(letters):
+            x = int(''.join(str(mp[ch]) for ch in a))
+            y = int(''.join(str(mp[ch]) for ch in b))
+            z = int(''.join(str(mp[ch]) for ch in c))
+            if x + y == z:
+                print(mp)
+                print(x, "+", y, "=", z)
+                return True
+            return False
+            
+        ch = letters[i]
+        for digit in range(10):
+            if digit not in used:
+                mp[ch] = digit
+                if backtrack(i + 1, used | {digit}, mp):
+                    return True
+                del mp[ch]
+        return False
+        
+    backtrack(0, set(), {})
+
+a = input("First word: ")
+b = input("Second word: ")
+c = input("Result word: ")
+solve(a, b, c)
+
+
+
+genetic.py
+
+
+import random
+
+def binary_to_decimal(s):
+    return int(s, 2)
+
+def get_x(s, low, high):
+    d = binary_to_decimal(s)
+    return low + (high - low) * d / (2 ** len(s) - 1)
+
+n = int(input("Population size: "))
+length = int(input("Chromosome length: "))
+seed = int(input("Seed: "))
+low, high = map(int, input("Min Max: ").split())
+generations = int(input("Generations: "))
+
+random.seed(seed)
+pop = [format(random.randrange(2 ** length), f'0{length}b') for _ in range(n)]
+
+for g in range(generations):
+    x = [get_x(i, low, high) for i in pop]
+    fit = [i * i for i in x]
+    print(f"\nGeneration", g + 1)
+    for i in range(n):
+        print(pop[i], "x =", round(x[i], 2), "fitness =", round(fit[i], 2))
+        
+    best = pop[fit.index(max(fit))]
+    new_pop = []
+    
+    for _ in range(n // 2):
+        p1 = random.choices(pop, weights=fit)[0]
+        p2 = random.choices(pop, weights=fit)[0]
+        point = random.randint(1, length - 1)
+        c1 = p1[:point] + p2[point:]
+        c2 = p2[:point] + p1[point:]
+        
+        def mutate(c):
+            c = list(c)
+            for i in range(length):
+                if random.random() < 0.01:
+                    c[i] = '1' if c[i] == '0' else '0'
+            return "".join(c)
+            
+        new_pop.append(mutate(c1))
+        new_pop.append(mutate(c2))
+        
+    new_pop[0] = best
+    pop = new_pop[:n]
+
+x = [get_x(i, low, high) for i in pop]
+fit = [i * i for i in x]
+best = fit.index(max(fit))
+print("\nFinal Best")
+print("Chromosome:", pop[best])
+print("x:", x[best])
+print("Fitness:", fit[best])
+
+
+
+mlp.py
+
+
+n = int(input("Enter no of nodes: "))
+
+print("Enter il, hl, ol:")
+il, hl, ol = map(int, input().split())
+
+print("Enter input values:")
+iw = list(map(int, input().split()))
+
+mat = [list(map(int, input().split())) for _ in range(n)]
+
+hidden_start = il
+hidden_end = il + hl
+
+output_start = hidden_end
+
+# ------- HIDDEN LAYER -------
+for j in range(hidden_start, hidden_end):
+    t = 0
+    for i in range(il):
+        t += iw[i] * mat[i][j]
+    mat[j][j] = t
+
+# ------- OUTPUT LAYER -------
+for j in range(output_start, n):
+    u = 0
+    for i in range(hidden_start, hidden_end):
+        u += mat[i][j] * mat[i][i]
+    mat[j][j] = u
+
+# ------- OUTPUT -------
+print("Output:", mat[output_start][output_start])
+
+
+
+a.pl
+
+
+
+/* FACTS */
+male(john).
+male(bob).
+male(alex).
+male(david).
+female(mary).
+female(susan).
+female(lisa).
+female(emma).
+
+age(john,25).
+age(bob,17).
+age(alex,30).
+age(mary,28).
+
+parent(john,bob).
+parent(mary,bob).
+parent(alex,emma).
+parent(susan,emma).
+
+likes(john,football).
+likes(bob,cricket).
+likes(alex,music).
+likes(mary,football).
+
+/* RULES */
+adult(X) :- age(X,A), A >= 18.
+minor(X) :- age(X,A), A < 18.
+father(X,Y) :- male(X), parent(X,Y).
+mother(X,Y) :- female(X), parent(X,Y).
+child(X,Y) :- parent(Y,X).
+football_fan(X) :- likes(X,football).
+cricket_fan(X) :- likes(X,cricket).
+adult_male(X) :- male(X), adult(X).
+adult_female(X) :- female(X), adult(X).
+not_football_fan(X) :- male(X), \+ likes(X,football).
+
+
+gaussian naïve Bayesian classification.py
+
+
+from sklearn.naive_bayes import GaussianNB 
+n = int(input("Enter number of training samples: ")) 
+X,y= [],[]
+print("\nEnter training data as feature1 feature2 class") 
+for i in range(n): 
+    values = input(f"Enter sample {i + 1}: ").split() 
+    feature1 = float(values[0]) 
+    feature2 = float(values[1]) 
+    class_label = int(values[2]) 
+    X.append([feature1, feature2]) 
+    y.append(class_label) 
+model = GaussianNB() 
+model.fit(X, y) 
+print("\nEnter test data:") 
+feature1 = float(input("Enter feature1: ")) 
+feature2 = float(input("Enter feature2: ")) 
+prediction = model.predict([[feature1, feature2]]) 
+probability = model.predict_proba([[feature1, feature2]]) 
+print("\nPredicted Class:", prediction[0]) 
+print("\nClass Probabilities:") 
+for cls, prob in zip(model.classes_, probability[0]): 
+    print("Class", cls, ":", round(prob, 4))
+
+
+
+cartpole.py
+
+
+import gymnasium as gym
+import numpy as np
+env = gym.make("CartPole-v1")
+bins = [3, 3, 12, 12]
+bounds = [(-2.4, 2.4),(-0.5, 0.5),(-0.2095, 0.2095),(-0.87, 0.87),]
+q_table = np.zeros((*bins, 2))
+alpha = 0.15
+gamma = 0.99
+epsilon = 1.0
+epsilon_min = 0.01
+epsilon_decay = 0.998
+episodes = 3000
+def discretize_state(state):
+    discrete = []
+    for i in range(4):
+        value = np.clip(state[i], bounds[i][0], bounds[i][1])
+        ratio = (value - bounds[i][0]) / (bounds[i][1] - bounds[i][0])
+        index = int(ratio * bins[i])
+        index = min(index, bins[i] - 1)
+        discrete.append(index)
+    return tuple(discrete)
+for episode in range(episodes):
+    state, info = env.reset()
+    state = discretize_state(state)
+    total_reward = 0
+    for step in range(500):
+        if np.random.random() < epsilon:
+            action = env.action_space.sample()
+        else:
+            action = int(np.argmax(q_table[state]))
+        next_state, reward, terminated, truncated, info = env.step(action)
+        next_state = discretize_state(next_state)
+        old_value = q_table[state + (action,)]
+        next_max = np.max(q_table[next_state])
+        target = reward + gamma * next_max * (not terminated)
+        q_table[state + (action,)] = old_value + alpha * (target - old_value)
+        state = next_state
+        total_reward += reward
+        if terminated or truncated:
+            break
+    epsilon = max(epsilon_min, epsilon * epsilon_decay)
+    if (episode + 1) % 100 == 0:
+        print(
+            f"Episode {episode + 1}, "
+            f"Reward: {total_reward}, "
+            f"Epsilon: {epsilon:.3f}"
+        )
+env.close()
+test_env = gym.make("CartPole-v1", render_mode="human")
+for episode in range(3):
+    state, info = test_env.reset()
+    state = discretize_state(state)
+    total_reward = 0
+    while True:
+        action = int(np.argmax(q_table[state]))
+        next_state, reward, terminated, truncated, info = test_env.step(action)
+        state = discretize_state(next_state)
+        total_reward += reward
+        if terminated or truncated:
+            break
+    print(f"Test episode {episode + 1}: {total_reward} steps")
+test_env.close()
+
