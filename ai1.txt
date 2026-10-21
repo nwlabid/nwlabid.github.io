@@ -1,0 +1,2679 @@
+
+yesteraday codes with questions:
+
+
+AI LAB PRACTICALS – PYTHON AND PROLOG
+=====================================
+
+NOTES
+-----
+1. Python 3 is required.
+2. Enter problem-specific values at runtime wherever requested.
+3. Install scikit-learn and pandas for Naive Bayes:
+   pip install scikit-learn pandas
+4. Install Gymnasium for CartPole:
+   pip install "gymnasium[classic-control]" stable-baselines3
+5. Install SWI-Prolog to run Prolog programs.
+6. For graph problems, enter the number of nodes and edges as input.
+7. Sample outputs can vary when an algorithm uses randomness.
+
+
+============================================================
+1. CRYPTARITHMETIC: SUN + FUN = SWIM
+============================================================
+
+CODE:
+
+from itertools import permutations
+
+words = input("Enter words and result (example: SUN FUN SWIM): ").upper().split()
+a, b, result = words
+letters = set(a + b + result)
+leading = {w[0] for w in words}
+
+if len(letters) > 10:
+    print("No solution")
+else:
+    found = False
+    for p in permutations(range(10), len(letters)):
+        d = dict(zip(letters, p))
+        if any(d[x] == 0 for x in leading):
+            continue
+        x = int("".join(str(d[c]) for c in a))
+        y = int("".join(str(d[c]) for c in b))
+        z = int("".join(str(d[c]) for c in result))
+        if x + y == z:
+            print(d)
+            print(x, "+", y, "=", z)
+            found = True
+            break
+    if not found:
+        print("No solution")
+
+SAMPLE INPUT:
+SUN FUN SWIM
+
+SAMPLE OUTPUT:
+A valid digit mapping is printed if a solution exists.
+No solution may be printed if no valid mapping exists.
+
+
+============================================================
+2. GENETIC ALGORITHM FOR N-QUEENS (N=6)
+============================================================
+
+CODE:
+
+import random
+
+n = int(input("Enter N: "))
+population_size = int(input("Population size: "))
+generations = int(input("Maximum generations: "))
+
+def fitness(c):
+    return sum(c[i] != c[j] and abs(c[i] - c[j]) != j-i
+               for i in range(n) for j in range(i+1, n))
+
+population = [random.sample(range(n), n)
+              for _ in range(population_size)]
+
+for generation in range(generations):
+    population.sort(key=fitness, reverse=True)
+    best = population[0]
+
+    if fitness(best) == n*(n-1)//2:
+        print("Solution:", best)
+        print("Chromosome encoding: one queen per column; values are rows")
+        break
+
+    new_population = population[:2]
+    while len(new_population) < population_size:
+        p1, p2 = random.choices(population[:max(2, population_size//2)], k=2)
+        cut = random.randint(1, n-1)
+        child = p1[:cut] + [x for x in p2 if x not in p1[:cut]]
+        if random.random() < 0.3:
+            i, j = random.sample(range(n), 2)
+            child[i], child[j] = child[j], child[i]
+        new_population.append(child)
+    population = new_population
+else:
+    print("No solution found within generation limit")
+
+SAMPLE INPUT:
+6
+30
+1000
+
+SAMPLE OUTPUT:
+Solution: [1, 3, 5, 0, 2, 4]
+Chromosome encoding: one queen per column; values are rows
+
+Note: A different valid solution may be printed.
+
+
+============================================================
+3. A* SEARCH FOR THE 8-PUZZLE
+============================================================
+
+CODE:
+
+import heapq
+
+start = tuple(map(int, input("Enter 9 numbers (use 0 for blank): ").split()))
+goal = tuple(map(int, input("Enter goal state: ").split()))
+
+def h(s):
+    return sum(abs(i//3 - (v-1)//3) + abs(i%3 - (v-1)%3)
+               for i, v in enumerate(s) if v)
+
+def neighbors(s):
+    i = s.index(0)
+    r, c = divmod(i, 3)
+    for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
+        nr, nc = r+dr, c+dc
+        if 0 <= nr < 3 and 0 <= nc < 3:
+            j = nr*3+nc
+            t = list(s)
+            t[i], t[j] = t[j], t[i]
+            yield tuple(t)
+
+pq = [(h(start), 0, start, [])]
+best = {start: 0}
+
+while pq:
+    f, g, s, path = heapq.heappop(pq)
+    if s == goal:
+        for state in path + [s]:
+            print(state[:3], state[3:6], state[6:])
+        print("Moves:", g)
+        break
+    if g != best[s]:
+        continue
+    for t in neighbors(s):
+        ng = g+1
+        if ng < best.get(t, float("inf")):
+            best[t] = ng
+            heapq.heappush(pq, (ng+h(t), ng, t, path+[s]))
+else:
+    print("No solution")
+
+SAMPLE INPUT:
+1 2 3 4 0 6 7 5 8
+1 2 3 4 5 6 7 8 0
+
+SAMPLE OUTPUT:
+(1, 2, 3) (4, 0, 6) (7, 5, 8)
+(1, 2, 3) (4, 5, 6) (7, 0, 8)
+(1, 2, 3) (4, 5, 6) (7, 8, 0)
+Moves: 2
+
+HEURISTICS:
+h1 = number of misplaced tiles.
+h2 = sum of Manhattan distances.
+Manhattan distance usually guides A* better while remaining admissible.
+
+
+============================================================
+4. WUMPUS WORLD: PIT AND GOLD USING PROPOSITIONAL LOGIC
+============================================================
+
+CODE:
+
+pit = set(map(tuple, eval(input("Enter pit coordinates, e.g. [(1,2)]: "))))
+gold = tuple(map(int, input("Enter gold coordinate: ").split(",")))
+cell = tuple(map(int, input("Enter current coordinate: ").split(",")))
+
+neighbors = [(cell[0]+1,cell[1]), (cell[0]-1,cell[1]),
+             (cell[0],cell[1]+1), (cell[0],cell[1]-1)]
+
+breeze = any(x in pit for x in neighbors)
+safe = cell not in pit
+
+print("P(cell) =", cell in pit)
+print("Breeze(cell) =", breeze)
+print("Safe(cell) =", safe)
+print("Gold(cell) =", cell == gold)
+
+SAMPLE INPUT:
+[(1,2)]
+1,1
+1,1
+
+SAMPLE OUTPUT:
+P(cell) = False
+Breeze(cell) = True
+Safe(cell) = True
+Gold(cell) = False
+
+LOGIC:
+Breeze(x,y) <-> at least one neighboring cell contains a pit.
+Safe(x,y) -> no pit and no Wumpus at that cell.
+Gold(x,y) -> gold is located in that cell.
+
+
+============================================================
+5. UNIFORM COST SEARCH (UCS)
+============================================================
+
+CODE:
+
+import heapq
+
+n = int(input("Number of nodes: "))
+m = int(input("Number of edges: "))
+graph = {i: [] for i in range(n)}
+
+for _ in range(m):
+    u, v, w = map(int, input("u v cost: ").split())
+    graph[u].append((v,w))
+    graph[v].append((u,w))
+
+start, goal = map(int, input("Start and goal: ").split())
+pq = [(0,start,[start])]
+best = {start: 0}
+
+while pq:
+    cost, node, path = heapq.heappop(pq)
+    if node == goal:
+        print("Path:", path)
+        print("Cost:", cost)
+        break
+    if cost != best[node]:
+        continue
+    for nxt, w in graph[node]:
+        nc = cost+w
+        if nc < best.get(nxt,float("inf")):
+            best[nxt] = nc
+            heapq.heappush(pq,(nc,nxt,path+[nxt]))
+else:
+    print("No path")
+
+SAMPLE INPUT:
+4
+4
+0 1 2
+0 2 5
+1 2 1
+2 3 2
+0 3
+
+SAMPLE OUTPUT:
+Path: [0, 1, 2, 3]
+Cost: 5
+
+
+============================================================
+6. SIMULATED ANNEALING
+============================================================
+
+CODE:
+
+import math
+import random
+
+x = float(input("Initial x: "))
+temperature = float(input("Initial temperature: "))
+cooling = float(input("Cooling factor (0 to 1): "))
+steps = int(input("Iterations: "))
+
+def objective(x):
+    return x*x + 10*math.sin(x)
+
+best = x
+while temperature > 0.001 and steps > 0:
+    candidate = x + random.uniform(-1,1)
+    delta = objective(candidate)-objective(x)
+    if delta < 0 or random.random() < math.exp(-delta/temperature):
+        x = candidate
+    if objective(x) < objective(best):
+        best = x
+    temperature *= cooling
+    steps -= 1
+
+print("Best x:", best)
+print("Minimum value:", objective(best))
+
+SAMPLE INPUT:
+5
+100
+0.95
+1000
+
+SAMPLE OUTPUT:
+Best x: approximately -1.3
+Minimum value: approximately -7.9
+
+Note: Results vary because of randomness.
+
+
+============================================================
+7. PEAS FRAMEWORK: SELF-DRIVING CAR
+============================================================
+
+P: Performance Measure
+- Passenger safety
+- Correct navigation
+- Minimum travel time
+- Fuel or energy efficiency
+- Traffic-rule compliance
+
+E: Environment
+- Roads
+- Other vehicles
+- Pedestrians
+- Traffic lights
+- Weather conditions
+- Road signs
+
+A: Actuators
+- Steering
+- Accelerator
+- Brakes
+- Indicators
+- Horn
+- Lights
+
+S: Sensors
+- Cameras
+- GPS
+- Radar
+- LiDAR
+- Ultrasonic sensors
+- Speed and inertial sensors
+
+
+============================================================
+8. NAIVE BAYES CLASSIFIER USING FIVE DATASETS
+============================================================
+
+CODE:
+
+from sklearn.datasets import load_iris, load_wine, load_breast_cancer, load_digits, load_diabetes
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import KBinsDiscretizer
+from sklearn.datasets import make_classification
+
+datasets = [
+    ("Iris", load_iris().data, load_iris().target),
+    ("Wine", load_wine().data, load_wine().target),
+    ("Breast Cancer", load_breast_cancer().data, load_breast_cancer().target),
+    ("Digits", load_digits().data, load_digits().target),
+    ("Synthetic Classification", *make_classification(
+        n_samples=1000, n_features=10, random_state=42))
+]
+
+for name, X, y in datasets:
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y)
+    model = GaussianNB()
+    model.fit(X_train, y_train)
+    pred = model.predict(X_test)
+    print(name, "Accuracy:", round(accuracy_score(y_test, pred)*100, 2), "%")
+
+SAMPLE OUTPUT:
+Iris Accuracy: (depends on dataset split)
+Wine Accuracy: (depends on dataset split)
+Breast Cancer Accuracy: (depends on dataset split)
+Digits Accuracy: (depends on dataset split)
+Synthetic Classification Accuracy: (depends on generated data)
+
+Note: load_diabetes is a regression dataset, so it is intentionally not used for classification.
+
+
+============================================================
+9. NAIVE BAYES: EMAIL SPAM CLASSIFICATION
+============================================================
+
+CODE:
+
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+texts = []
+labels = []
+
+n = int(input("Number of emails: "))
+for _ in range(n):
+    texts.append(input("Email text: "))
+    labels.append(input("Label (spam/ham): ").lower())
+
+X_train, X_test, y_train, y_test = train_test_split(
+    texts, labels, test_size=0.25, random_state=42)
+
+vectorizer = CountVectorizer()
+Xtr = vectorizer.fit_transform(X_train)
+Xte = vectorizer.transform(X_test)
+
+model = MultinomialNB()
+model.fit(Xtr, y_train)
+pred = model.predict(Xte)
+
+print("Accuracy:", accuracy_score(y_test, pred))
+email = input("Enter email to classify: ")
+print("Prediction:", model.predict(vectorizer.transform([email]))[0])
+
+SAMPLE INPUT:
+8
+Win a free prize now
+spam
+Meeting moved to tomorrow
+ham
+Claim your cash reward
+spam
+Please send the report
+ham
+Free offer click now
+spam
+Lunch at noon
+ham
+You won a reward
+spam
+Project meeting today
+ham
+Are you free today?
+
+SAMPLE OUTPUT:
+Accuracy: (depends on the train/test split)
+Prediction: ham
+
+Note: Provide enough examples of each class for meaningful evaluation.
+
+
+============================================================
+10. KNOWLEDGE BASE USING PROLOG
+============================================================
+
+STATEMENTS (save as kb.pl):
+
+works_hard(anita).
+succeeds(X) :- works_hard(X).
+promoted(X) :- succeeds(X).
+
+QUERIES:
+
+?- works_hard(anita).
+?- succeeds(anita).
+?- promoted(anita).
+
+SAMPLE OUTPUT:
+
+true.
+true.
+true.
+
+
+============================================================
+11. CRYPTARITHMETIC: SEND + MORE = MONEY
+============================================================
+
+CODE:
+
+from itertools import permutations
+
+letters = "SENDMORY"
+leading = "SM"
+
+for p in permutations(range(10), len(letters)):
+    d = dict(zip(letters,p))
+    if any(d[c] == 0 for c in leading):
+        continue
+    send = 1000*d['S']+100*d['E']+10*d['N']+d['D']
+    more = 1000*d['M']+100*d['O']+10*d['R']+d['E']
+    money = 10000*d['M']+1000*d['O']+100*d['N']+10*d['E']+d['Y']
+    if send+more == money:
+        print("SEND =", send, "MORE =", more, "MONEY =", money)
+        print(d)
+        break
+
+SAMPLE OUTPUT:
+SEND = 9567 MORE = 1085 MONEY = 10652
+
+
+============================================================
+12. PROLOG: FORWARD AND BACKWARD CHAINING
+============================================================
+
+STATEMENTS:
+
+works_hard(anita).
+succeeds(X) :- works_hard(X).
+promoted(X) :- succeeds(X).
+
+BACKWARD-CHAINING QUERY:
+
+?- promoted(anita).
+
+SAMPLE OUTPUT:
+true.
+
+FORWARD-CHAINING IDEA:
+works_hard(anita) -> succeeds(anita) -> promoted(anita).
+
+Prolog normally answers queries using backward chaining.
+
+
+============================================================
+13. HILL CLIMBING: MINIMIZE A FUNCTION
+============================================================
+
+CODE:
+
+x = float(input("Initial x: "))
+step = float(input("Step size: "))
+iterations = int(input("Maximum iterations: "))
+
+def f(x):
+    return x*x
+
+for _ in range(iterations):
+    candidates = [x-step, x+step]
+    better = min(candidates, key=f)
+    if f(better) >= f(x):
+        break
+    x = better
+
+print("Best x:", x)
+print("Function value:", f(x))
+
+SAMPLE INPUT:
+8
+0.1
+1000
+
+SAMPLE OUTPUT:
+Best x: approximately 0
+Function value: approximately 0
+
+
+============================================================
+14. NAIVE BAYES USING A CSV DATASET
+============================================================
+
+CODE:
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score
+
+file = input("CSV filename: ")
+target = input("Target column: ")
+
+df = pd.read_csv(file).dropna()
+X = pd.get_dummies(df.drop(columns=[target]))
+y = df[target]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+model = GaussianNB()
+model.fit(X_train, y_train)
+print("Accuracy:", accuracy_score(y_test, model.predict(X_test)))
+
+SAMPLE INPUT:
+CSV filename: data.csv
+Target column: class
+
+SAMPLE OUTPUT:
+Accuracy: (depends on data.csv)
+
+
+============================================================
+15. ALPHA-BETA PRUNING
+============================================================
+
+CODE:
+
+import math
+
+def alphabeta(tree, depth, alpha, beta, maximizing):
+    if not isinstance(tree, list):
+        return tree
+    if maximizing:
+        value = -math.inf
+        for child in tree:
+            value = max(value, alphabeta(child, depth+1, alpha, beta, False))
+            alpha = max(alpha, value)
+            if alpha >= beta:
+                break
+        return value
+    value = math.inf
+    for child in tree:
+        value = min(value, alphabeta(child, depth+1, alpha, beta, True))
+        beta = min(beta, value)
+        if beta <= alpha:
+            break
+    return value
+
+tree = eval(input("Enter nested game tree, e.g. [[3,5],[2,9]]: "))
+print("Best value:", alphabeta(tree, 0, -math.inf, math.inf, True))
+
+SAMPLE INPUT:
+[[3,5],[2,9]]
+
+SAMPLE OUTPUT:
+Best value: 5
+
+
+============================================================
+16. PROPOSITIONAL LOGIC INFERENCE
+============================================================
+
+CODE:
+
+works_hard = input("Does Anita work hard? (yes/no): ").lower() == "yes"
+succeeds = works_hard
+promoted = succeeds
+
+print("Works hard:", works_hard)
+print("Succeeds:", succeeds)
+print("Promoted:", promoted)
+
+SAMPLE INPUT:
+yes
+
+SAMPLE OUTPUT:
+Works hard: True
+Succeeds: True
+Promoted: True
+
+RULES:
+H -> S
+S -> P
+H
+Therefore S and P.
+
+
+============================================================
+17. TRAVELLING SALESMAN PROBLEM: LOCAL SEARCH
+============================================================
+
+CODE:
+
+import random
+
+n = int(input("Number of cities: "))
+dist = []
+for i in range(n):
+    dist.append(list(map(int, input("Distance row: ").split())))
+
+def cost(path):
+    return sum(dist[path[i]][path[(i+1)%n]] for i in range(n))
+
+path = list(range(n))
+random.shuffle(path)
+best = path[:]
+
+for _ in range(10000):
+    i, j = random.sample(range(n), 2)
+    candidate = path[:]
+    candidate[i], candidate[j] = candidate[j], candidate[i]
+    if cost(candidate) < cost(path):
+        path = candidate
+    if cost(path) < cost(best):
+        best = path[:]
+
+print("Best tour:", best + [best[0]])
+print("Tour cost:", cost(best))
+
+SAMPLE INPUT:
+4
+0 10 15 20
+10 0 35 25
+15 35 0 30
+20 25 30 0
+
+SAMPLE OUTPUT:
+Best tour: [0, 1, 3, 2, 0]
+Tour cost: 80
+
+
+============================================================
+18. PROLOG: CNF AND RESOLUTION
+============================================================
+
+KNOWLEDGE BASE:
+
+% P -> Q is equivalent to not(P) OR Q.
+% Q -> R is equivalent to not(Q) OR R.
+% P is true.
+
+p.
+q :- p.
+r :- q.
+
+QUERY:
+
+?- r.
+
+SAMPLE OUTPUT:
+true.
+
+CNF CLAUSES:
+1. not(P) OR Q
+2. not(Q) OR R
+3. P
+
+RESOLUTION:
+From 1 and 3, derive Q.
+From 2 and Q, derive R.
+
+Therefore R is true.
+
+
+============================================================
+19. MINIMAX FOR TIC-TAC-TOE
+============================================================
+
+CODE:
+
+import math
+
+board = list(input("Enter 9 cells using X, O, -: ").upper())
+player = input("AI player (X/O): ").upper()
+human = "O" if player == "X" else "X"
+wins = [(0,1,2),(3,4,5),(6,7,8),(0,3,6),
+        (1,4,7),(2,5,8),(0,4,8),(2,4,6)]
+
+def winner(b):
+    for a,c,d in wins:
+        if b[a] == b[c] == b[d] and b[a] != "-":
+            return b[a]
+    return None
+
+def minimax(b, turn):
+    w = winner(b)
+    if w == player: return 1
+    if w == human: return -1
+    if "-" not in b: return 0
+    scores = []
+    for i in range(9):
+        if b[i] == "-":
+            b[i] = turn
+            scores.append((minimax(b, human if turn == player else player), i))
+            b[i] = "-"
+    return (max if turn == player else min)(scores)[0]
+
+best_move = None
+best_score = -math.inf
+for i in range(9):
+    if board[i] == "-":
+        board[i] = player
+        score = minimax(board, human)
+        board[i] = "-"
+        if score > best_score:
+            best_score, best_move = score, i
+
+if best_move is not None:
+    board[best_move] = player
+print(" ".join(board[i:i+3] for i in range(0,9,3)))
+
+SAMPLE INPUT:
+X---O----
+X
+
+SAMPLE OUTPUT:
+X X - - O - - - -
+
+
+============================================================
+20. CARTPOLE: TRAIN AN AGENT
+============================================================
+
+CODE:
+
+import gymnasium as gym
+from stable_baselines3 import PPO
+
+env = gym.make("CartPole-v1")
+model = PPO("MlpPolicy", env, verbose=1)
+steps = int(input("Training timesteps: "))
+model.learn(total_timesteps=steps)
+model.save("cartpole_agent")
+
+obs, info = env.reset()
+total_reward = 0
+
+for _ in range(1000):
+    action, _ = model.predict(obs, deterministic=True)
+    obs, reward, terminated, truncated, info = env.step(action)
+    total_reward += reward
+    if terminated or truncated:
+        obs, info = env.reset()
+        break
+
+print("Evaluation reward:", total_reward)
+env.close()
+
+SAMPLE INPUT:
+10000
+
+SAMPLE OUTPUT:
+Training progress appears.
+Evaluation reward: (depends on training)
+
+
+============================================================
+21. SUDOKU SOLVER USING BACKTRACKING CSP
+============================================================
+
+CODE:
+
+grid = []
+for _ in range(9):
+    grid.append(list(map(int, input("Enter 9 digits (0=empty): ").split())))
+
+def safe(r,c,v):
+    if v in grid[r]: return False
+    if any(grid[i][c] == v for i in range(9)): return False
+    br, bc = (r//3)*3, (c//3)*3
+    return all(grid[i][j] != v
+               for i in range(br,br+3) for j in range(bc,bc+3))
+
+def solve():
+    for r in range(9):
+        for c in range(9):
+            if grid[r][c] == 0:
+                for v in range(1,10):
+                    if safe(r,c,v):
+                        grid[r][c] = v
+                        if solve(): return True
+                        grid[r][c] = 0
+                return False
+    return True
+
+if solve():
+    for row in grid: print(*row)
+else:
+    print("No solution")
+
+SAMPLE INPUT:
+Enter a standard Sudoku puzzle as 9 rows.
+Use 0 for empty cells.
+
+SAMPLE OUTPUT:
+The completed 9x9 Sudoku grid is printed.
+
+
+============================================================
+22. BFS AND DFS FOR A TREE/GRAPH
+============================================================
+
+CODE:
+
+from collections import deque
+
+n = int(input("Number of nodes: "))
+m = int(input("Number of edges: "))
+graph = {i: [] for i in range(n)}
+
+for _ in range(m):
+    u,v = map(int, input("Edge u v: ").split())
+    graph[u].append(v)
+    graph[v].append(u)
+
+start = int(input("Start node: "))
+
+visited = {start}
+q = deque([start])
+bfs = []
+
+while q:
+    u = q.popleft()
+    bfs.append(u)
+    for v in graph[u]:
+        if v not in visited:
+            visited.add(v)
+            q.append(v)
+
+visited = set()
+dfs = []
+
+def visit(u):
+    visited.add(u)
+    dfs.append(u)
+    for v in graph[u]:
+        if v not in visited:
+            visit(v)
+
+visit(start)
+print("BFS:", bfs)
+print("DFS:", dfs)
+
+SAMPLE INPUT:
+5
+4
+0 1
+0 2
+1 3
+1 4
+0
+
+SAMPLE OUTPUT:
+BFS: [0, 1, 2, 3, 4]
+DFS: [0, 1, 3, 4, 2]
+
+
+============================================================
+23. WATER JUG PROBLEM USING DFS
+============================================================
+
+CODE:
+
+from collections import deque
+
+a = int(input("Capacity of jug A: "))
+b = int(input("Capacity of jug B: "))
+target = int(input("Target amount: "))
+
+stack = [(0,0,[])]
+visited = set()
+found = False
+
+while stack:
+    x,y,path = stack.pop()
+    if (x,y) in visited: continue
+    visited.add((x,y))
+    path = path + [(x,y)]
+    if x == target or y == target:
+        print("Path:", path)
+        found = True
+        break
+    states = [
+        (a,y), (x,b), (0,y), (x,0),
+        (x-min(x,b-y), y+min(x,b-y)),
+        (x+min(y,a-x), y-min(y,a-x))
+    ]
+    for s in states:
+        if s not in visited:
+            stack.append((s[0],s[1],path))
+
+if not found:
+    print("No solution")
+
+SAMPLE INPUT:
+4
+3
+2
+
+SAMPLE OUTPUT:
+Path: (a sequence of jug states ending in 2)
+
+
+============================================================
+24. A* SEARCH FOR A GRID MAP
+============================================================
+
+CODE:
+
+import heapq
+
+rows = int(input("Rows: "))
+cols = int(input("Columns: "))
+grid = [input("Enter row using . and #: ") for _ in range(rows)]
+sr,sc = map(int,input("Start row col: ").split())
+gr,gc = map(int,input("Goal row col: ").split())
+
+def h(r,c):
+    return abs(r-gr)+abs(c-gc)
+
+pq = [(h(sr,sc),0,sr,sc,[(sr,sc)])]
+best = {(sr,sc):0}
+
+while pq:
+    f,g,r,c,path = heapq.heappop(pq)
+    if (r,c)==(gr,gc):
+        print("Path:",path)
+        print("Cost:",g)
+        break
+    if g != best[(r,c)]: continue
+    for dr,dc in ((1,0),(-1,0),(0,1),(0,-1)):
+        nr,nc=r+dr,c+dc
+        if (0<=nr<rows and 0<=nc<cols and grid[nr][nc]!='#'):
+            ng=g+1
+            if ng<best.get((nr,nc),float("inf")):
+                best[(nr,nc)]=ng
+                heapq.heappush(pq,(ng+h(nr,nc),ng,nr,nc,path+[(nr,nc)]))
+else:
+    print("No path")
+
+SAMPLE INPUT:
+3
+3
+...
+.#.
+...
+0 0
+2 2
+
+SAMPLE OUTPUT:
+Path: [(0, 0), (1, 0), (2, 0), (2, 1), (2, 2)]
+Cost: 4
+
+
+============================================================
+25. FIRST-ORDER LOGIC
+============================================================
+
+KNOWLEDGE BASE:
+
+Human(Socrates)
+ForAll x: Human(x) -> Mortal(x)
+
+PROLOG REPRESENTATION:
+
+human(socrates).
+mortal(X) :- human(X).
+
+QUERY:
+
+?- mortal(socrates).
+
+SAMPLE OUTPUT:
+true.
+
+LOGIC:
+Human(Socrates)
+Human(x) -> Mortal(x)
+Therefore Mortal(Socrates).
+
+
+============================================================
+26. WATER JUG AS A CONSTRAINT SATISFACTION PROBLEM
+============================================================
+
+CODE:
+
+from collections import deque
+
+A = int(input("Jug A capacity: "))
+B = int(input("Jug B capacity: "))
+T = int(input("Target: "))
+
+start = (0,0)
+q = deque([(start, [start])])
+seen = {start}
+answer = None
+
+while q:
+    (x,y), path = q.popleft()
+    if x == T or y == T:
+        answer = path
+        break
+    k = min(x, B-y)
+    l = min(y, A-x)
+    nxt = [(A,y),(x,B),(0,y),(x,0),(x-k,y+k),(x+l,y-l)]
+    for state in nxt:
+        if state not in seen:
+            seen.add(state)
+            q.append((state,path+[state]))
+
+print(answer if answer else "No solution")
+
+SAMPLE INPUT:
+4
+3
+2
+
+SAMPLE OUTPUT:
+A sequence of valid states ending with 2.
+
+
+============================================================
+27. DELIVERY DRONE: UCS MINIMUM BATTERY
+============================================================
+
+CODE:
+
+import heapq
+
+n = int(input("Number of locations: "))
+m = int(input("Number of routes: "))
+graph = {i: [] for i in range(n)}
+
+for _ in range(m):
+    u,v,battery = map(int,input("u v battery_cost: ").split())
+    graph[u].append((v,battery))
+    graph[v].append((u,battery))
+
+start,goal = map(int,input("Start and goal: ").split())
+pq = [(0,start,[start])]
+best = {start:0}
+
+while pq:
+    cost,u,path = heapq.heappop(pq)
+    if u == goal:
+        print("Route:",path)
+        print("Battery used:",cost)
+        break
+    if cost != best[u]: continue
+    for v,w in graph[u]:
+        nc=cost+w
+        if nc<best.get(v,float("inf")):
+            best[v]=nc
+            heapq.heappush(pq,(nc,v,path+[v]))
+else:
+    print("No route")
+
+SAMPLE INPUT:
+4
+4
+0 1 3
+0 2 1
+2 1 1
+1 3 2
+0 3
+
+SAMPLE OUTPUT:
+Route: [0, 2, 1, 3]
+Battery used: 4
+
+
+============================================================
+28. N-QUEENS USING HILL CLIMBING
+============================================================
+
+CODE:
+
+import random
+
+n = int(input("Enter N: "))
+restarts = int(input("Maximum restarts: "))
+
+def conflicts(q):
+    return sum(q[i] == q[j] or abs(q[i]-q[j]) == j-i
+               for i in range(n) for j in range(i+1,n))
+
+for _ in range(restarts):
+    q = [random.randrange(n) for _ in range(n)]
+    while True:
+        score = conflicts(q)
+        if score == 0:
+            print("Solution:", q)
+            break
+        best = None
+        best_score = score
+        for c in range(n):
+            for r in range(n):
+                old=q[c]
+                q[c]=r
+                s=conflicts(q)
+                q[c]=old
+                if s<best_score:
+                    best_score=s
+                    best=(c,r)
+        if best is None:
+            break
+        q[best[0]]=best[1]
+    if conflicts(q)==0:
+        break
+else:
+    print("No solution found")
+
+SAMPLE INPUT:
+6
+100
+
+SAMPLE OUTPUT:
+Solution: (valid six-row placement)
+
+
+============================================================
+29. PROLOG KNOWLEDGE BASE: FAMILY RELATIONSHIPS
+============================================================
+
+STATEMENTS:
+
+parent(john, mary).
+parent(mary, sam).
+
+grandparent(X, Z) :-
+    parent(X, Y),
+    parent(Y, Z).
+
+QUERY:
+
+?- grandparent(john, sam).
+
+SAMPLE OUTPUT:
+true.
+
+
+============================================================
+30. AMBULANCE ROUTING USING UCS
+============================================================
+
+CODE:
+
+import heapq
+
+n = int(input("Number of locations: "))
+m = int(input("Number of roads: "))
+graph = {i: [] for i in range(n)}
+
+for _ in range(m):
+    u,v,time = map(int,input("u v travel_time: ").split())
+    graph[u].append((v,time))
+    graph[v].append((u,time))
+
+start = int(input("Ambulance location: "))
+hospitals = set(map(int,input("Hospital node IDs: ").split()))
+
+pq = [(0,start,[start])]
+best = {start:0}
+
+while pq:
+    cost,u,path=heapq.heappop(pq)
+    if u in hospitals:
+        print("Nearest hospital route:",path)
+        print("Travel cost:",cost)
+        break
+    if cost!=best[u]: continue
+    for v,w in graph[u]:
+        nc=cost+w
+        if nc<best.get(v,float("inf")):
+            best[v]=nc
+            heapq.heappush(pq,(nc,v,path+[v]))
+else:
+    print("No reachable hospital")
+
+SAMPLE INPUT:
+4
+4
+0 1 3
+0 2 1
+2 3 1
+1 3 2
+0
+3
+
+SAMPLE OUTPUT:
+Nearest hospital route: [0, 2, 3]
+Travel cost: 2
+
+
+============================================================
+31. PROPOSITIONAL LOGIC ENTAILMENT
+============================================================
+
+CODE:
+
+p = input("Is P true? (yes/no): ").lower() == "yes"
+rule = input("Does P imply Q? (yes/no): ").lower() == "yes"
+q = p and rule
+
+print("P:", p)
+print("KB entails Q:", q)
+
+SAMPLE INPUT:
+yes
+yes
+
+SAMPLE OUTPUT:
+P: True
+KB entails Q: True
+
+
+============================================================
+32. CRYPTARITHMETIC WITH BACKTRACKING AND CONSTRAINTS
+============================================================
+
+CODE:
+
+from itertools import permutations
+
+a,b,result = input("Enter A B RESULT: ").upper().split()
+letters = list(set(a+b+result))
+leading = {a[0],b[0],result[0]}
+
+if len(letters)>10:
+    print("No solution")
+else:
+    found=False
+    for values in permutations(range(10),len(letters)):
+        d=dict(zip(letters,values))
+        if any(d[c]==0 for c in leading):
+            continue
+        x=int("".join(str(d[c]) for c in a))
+        y=int("".join(str(d[c]) for c in b))
+        z=int("".join(str(d[c]) for c in result))
+        if x+y==z:
+            print(x,"+",y,"=",z)
+            found=True
+            break
+    if not found:
+        print("No solution")
+
+SAMPLE INPUT:
+SEND MORE MONEY
+
+SAMPLE OUTPUT:
+9567 + 1085 = 10652
+
+
+============================================================
+33. PROLOG: FORWARD CHAINING EXAMPLE
+============================================================
+
+STATEMENTS:
+
+fever(ravi).
+cough(ravi).
+flu(X) :- fever(X), cough(X).
+rest(X) :- flu(X).
+
+QUERY:
+
+?- rest(ravi).
+
+SAMPLE OUTPUT:
+true.
+
+INFERENCE:
+fever(ravi) and cough(ravi) -> flu(ravi) -> rest(ravi).
+
+
+============================================================
+34. A* SEARCH TO REACH A GOAL STATE
+============================================================
+
+CODE:
+
+import heapq
+
+n=int(input("Number of nodes: "))
+m=int(input("Number of edges: "))
+graph={i:[] for i in range(n)}
+for _ in range(m):
+    u,v,w=map(int,input("u v cost: ").split())
+    graph[u].append((v,w))
+heuristic=list(map(int,input("Heuristic for each node: ").split()))
+start,goal=map(int,input("Start goal: ").split())
+
+pq=[(heuristic[start],0,start,[start])]
+best={start:0}
+
+while pq:
+    f,g,u,path=heapq.heappop(pq)
+    if u==goal:
+        print("Path:",path)
+        print("Cost:",g)
+        break
+    if g!=best[u]: continue
+    for v,w in graph[u]:
+        ng=g+w
+        if ng<best.get(v,float("inf")):
+            best[v]=ng
+            heapq.heappush(pq,(ng+heuristic[v],ng,v,path+[v]))
+else:
+    print("No path")
+
+SAMPLE INPUT:
+4
+4
+0 1 1
+0 2 4
+1 3 2
+2 3 1
+2 1 0 0
+0 3
+
+SAMPLE OUTPUT:
+Path: [0, 1, 3]
+Cost: 3
+
+
+============================================================
+END OF AI LAB PRACTICALS
+============================================================
+
+
+
+
+
+
+
+
+
+
+answers2:
+
+
+AI LAB - MINIMAL WORKING PROGRAMS (Python 3 / SWI-Prolog)
+==============================================================================
+How to run
+  Python : python3 file.py        (every value is typed at the prompt, nothing is hard coded)
+  Prolog : swipl -q -s file.pl    then type queries at the  ?-  prompt
+Libraries: only Python standard library, except #8 (numpy, scikit-learn) and #17 (gymnasium, numpy).
+           pip install numpy scikit-learn gymnasium
+In every "Sample IO" the text after a prompt is what the user typed.
+
+INDEX - which program answers which lab question
+  Cryptarithmetic (SUN+FUN=SWIM, SEND+MORE=MONEY, TWO+TWO=FOUR), backtracking/CSP ... 1
+  Genetic algorithm / GA for N-Queens (N=6): encoding, crossover, mutation ............. 2
+  A* for 4-puzzle / 8-puzzle, heuristic comparison, reach goal state ..................... 3
+  Wumpus world: pits and gold with propositional logic ................................... 4
+  UCS to reach goal; Ambulance routing (nearest hospital); Delivery drone min battery .... 5
+  Simulated annealing to reach goal state (TSP) .......................................... 6
+  PEAS for self-driving car ............................................................. 7
+  Naive Bayes on 5 datasets / any dataset / classifier ................................... 8
+  Naive Bayes spam / not spam with accuracy .............................................. 9
+  Water jug using DFS / Water jug (search) .............................................. 10
+  CSP formulation of Water jug .......................................................... 11
+  Hill climbing (N-Queens), local search ................................................ 12
+  Local search for TSP (hill climbing) ................................................. 13
+  Alpha-beta pruning .................................................................... 14
+  Propositional logic: entailment / derive conclusion / inference ...................... 15
+  Minimax for tic-tac-toe ............................................................... 16
+  Cart-pole agent training ............................................................. 17
+  Sudoku solver (CSP) .................................................................. 18
+  BFS and DFS for a given tree ......................................................... 19
+  A* for grid map ...................................................................... 20
+  Prolog knowledge base (family) / knowledge base using Prolog ......................... 21
+  Prolog KB: works hard -> succeed -> promoted (Anita) ................................. 22
+  Forward chaining using Prolog ........................................................ 23
+  Prolog: CNF and Resolution ........................................................... 24
+  First order logic (Prolog) ........................................................... 25
+  (Job scheduling local search: use #13 - same hill-climbing code, replace the tour cost
+   by the schedule cost.)
+
+==============================================================================
+1. CRYPTARITHMETIC (backtracking + constraint pruning, any puzzle)
+==============================================================================
+(Covers: SUN+FUN=SWIM, SEND+MORE=MONEY, TWO+TWO=FOUR)
+Constraints: all letters different digits, no leading zero, every lower-column sum must already be correct (mod 10^k).
+
+puzzle = input("Enter puzzle (e.g. SEND + MORE = MONEY): ").upper().replace(" ", "")
+left, right = puzzle.split("=")
+words = left.split("+") + [right]
+sign = [1] * (len(words) - 1) + [-1]
+L = max(map(len, words))
+letters, cnt = [], [0]
+for k in range(L):                      # order letters column by column (right to left)
+    for w in words:
+        if k < len(w) and w[-1 - k] not in letters:
+            letters.append(w[-1 - k])
+    cnt.append(len(letters))
+lead = {w[0] for w in words}
+W = [{} for _ in range(L + 1)]          # W[k][letter] = weight using only the lowest k columns
+for k in range(L + 1):
+    for w, s in zip(words, sign):
+        for p in range(min(k, len(w))):
+            W[k][w[-1 - p]] = W[k].get(w[-1 - p], 0) + s * 10 ** p
+sols = []
+def solve(i, used, a):
+    if i == len(letters):
+        if sum(W[L][c] * a[c] for c in a) == 0: sols.append(dict(a))
+        return
+    for d in range(10):
+        if d in used or (d == 0 and letters[i] in lead): continue
+        a[letters[i]] = d
+        # constraint: lowest k columns must already add up correctly (mod 10^k)
+        if all(sum(W[k][c] * a[c] for c in W[k]) % 10 ** k == 0 for k in range(1, L) if cnt[k] == i + 1):
+            solve(i + 1, used | {d}, a)
+        del a[letters[i]]
+solve(0, set(), {})
+if not sols: print("No solution")
+for s in sols:
+    print("Letters:", s)
+    print(" + ".join(str(int("".join(str(s[c]) for c in w))) for w in words[:-1]), "=", int("".join(str(s[c]) for c in words[-1])))
+
+Sample IO:
+----------
+Enter puzzle (e.g. SEND + MORE = MONEY): SUN + FUN = SWIM
+Letters: {'N': 2, 'M': 4, 'U': 3, 'I': 6, 'S': 1, 'F': 9, 'W': 0}
+132 + 932 = 1064
+Letters: {'N': 3, 'M': 6, 'U': 2, 'I': 4, 'S': 1, 'F': 9, 'W': 0}
+123 + 923 = 1046
+Letters: {'N': 3, 'M': 6, 'U': 4, 'I': 8, 'S': 1, 'F': 9, 'W': 0}
+143 + 943 = 1086
+Letters: {'N': 3, 'M': 6, 'U': 7, 'I': 4, 'S': 1, 'F': 8, 'W': 0}
+173 + 873 = 1046
+Letters: {'N': 4, 'M': 8, 'U': 3, 'I': 6, 'S': 1, 'F': 9, 'W': 0}
+134 + 934 = 1068
+Letters: {'N': 6, 'M': 2, 'U': 3, 'I': 7, 'S': 1, 'F': 9, 'W': 0}
+136 + 936 = 1072
+Letters: {'N': 6, 'M': 2, 'U': 7, 'I': 5, 'S': 1, 'F': 8, 'W': 0}
+176 + 876 = 1052
+Letters: {'N': 7, 'M': 4, 'U': 2, 'I': 5, 'S': 1, 'F': 9, 'W': 0}
+127 + 927 = 1054
+Letters: {'N': 7, 'M': 4, 'U': 6, 'I': 3, 'S': 1, 'F': 8, 'W': 0}
+167 + 867 = 1034
+Letters: {'N': 8, 'M': 6, 'U': 2, 'I': 5, 'S': 1, 'F': 9, 'W': 0}
+128 + 928 = 1056
+Letters: {'N': 8, 'M': 6, 'U': 3, 'I': 7, 'S': 1, 'F': 9, 'W': 0}
+138 + 938 = 1076
+
+Sample IO:
+----------
+Enter puzzle (e.g. SEND + MORE = MONEY): SEND + MORE = MONEY
+Letters: {'D': 7, 'E': 5, 'Y': 2, 'N': 6, 'R': 8, 'O': 0, 'S': 9, 'M': 1}
+9567 + 1085 = 10652
+
+Sample IO:
+----------
+Enter puzzle (e.g. SEND + MORE = MONEY): TWO + TWO = FOUR
+Letters: {'O': 4, 'R': 8, 'W': 3, 'U': 6, 'T': 7, 'F': 1}
+734 + 734 = 1468
+Letters: {'O': 5, 'R': 0, 'W': 6, 'U': 3, 'T': 7, 'F': 1}
+765 + 765 = 1530
+Letters: {'O': 6, 'R': 2, 'W': 3, 'U': 7, 'T': 8, 'F': 1}
+836 + 836 = 1672
+Letters: {'O': 6, 'R': 2, 'W': 4, 'U': 9, 'T': 8, 'F': 1}
+846 + 846 = 1692
+Letters: {'O': 7, 'R': 4, 'W': 6, 'U': 3, 'T': 8, 'F': 1}
+867 + 867 = 1734
+Letters: {'O': 8, 'R': 6, 'W': 2, 'U': 5, 'T': 9, 'F': 1}
+928 + 928 = 1856
+Letters: {'O': 8, 'R': 6, 'W': 3, 'U': 7, 'T': 9, 'F': 1}
+938 + 938 = 1876
+
+==============================================================================
+2. GENETIC ALGORITHM (N-Queens, N=6 or any N)
+==============================================================================
+(Covers: genetic algorithm; GA for N-Queens with chromosome encoding, crossover, mutation)
+Chromosome = list of N numbers, c[i] = row of the queen in column i. Fitness = non-attacking pairs. Selection = tournament, crossover = single point, mutation = random gene change, elitism = 2.
+
+import random
+n = int(input("N (board size): "))
+pop = int(input("Population size: "))
+mr = float(input("Mutation rate (0-1): "))
+gens = int(input("Max generations: "))
+best = n * (n - 1) // 2
+def fit(c):  # chromosome c[i] = row of queen in column i ; fitness = non-attacking pairs
+    return best - sum(c[i] == c[j] or abs(c[i] - c[j]) == j - i for i in range(n) for j in range(i + 1, n))
+P = [[random.randrange(n) for _ in range(n)] for _ in range(pop)]
+for g in range(gens):
+    P.sort(key=fit, reverse=True)
+    if g % 10 == 0 or fit(P[0]) == best: print("Gen", g, "best", P[0], "fitness", fit(P[0]), "/", best)
+    if fit(P[0]) == best: break
+    new = P[:2]                                            # elitism
+    while len(new) < pop:
+        a = max(random.sample(P, 3), key=fit); b = max(random.sample(P, 3), key=fit)  # tournament selection
+        cp = random.randint(1, n - 1); child = a[:cp] + b[cp:]                         # single-point crossover
+        if random.random() < mr: child[random.randrange(n)] = random.randrange(n)       # mutation
+        new.append(child)
+    P = new
+print("Solution chromosome:", P[0], "fitness", fit(P[0]))
+for r in range(n): print(" ".join("Q" if P[0][c] == r else "." for c in range(n)))
+
+Sample IO:
+----------
+N (board size): 6
+Population size: 100
+Mutation rate (0-1): 0.2
+Max generations: 500
+Gen 0 best [3, 1, 4, 2, 0, 4] fitness 13 / 15
+Gen 4 best [3, 0, 4, 1, 5, 2] fitness 15 / 15
+Solution chromosome: [3, 0, 4, 1, 5, 2] fitness 15
+. Q . . . .
+. . . Q . .
+. . . . . Q
+Q . . . . .
+. . Q . . .
+. . . . Q .
+
+==============================================================================
+3. A* SEARCH FOR N-PUZZLE (4-puzzle, 8-puzzle) WITH HEURISTIC ANALYSIS
+==============================================================================
+(Covers: A* for 4 puzzle, A* for 8 puzzle + compare heuristics, A* to reach goal state)
+Grid size 2 = 4-puzzle, 3 = 8-puzzle. Compares misplaced tiles (h1) with Manhattan distance (h2): both optimal, h2 expands fewer nodes.
+
+import heapq
+n = int(input("Grid size (2 = 4-puzzle, 3 = 8-puzzle): "))
+start = tuple(map(int, input("Start state (row-wise, 0 = blank): ").split()))
+goal = tuple(map(int, input("Goal state (row-wise, 0 = blank): ").split()))
+pos = {v: i for i, v in enumerate(goal)}
+def misplaced(s): return sum(1 for i, v in enumerate(s) if v and v != goal[i])
+def manhattan(s): return sum(abs(i // n - pos[v] // n) + abs(i % n - pos[v] % n) for i, v in enumerate(s) if v)
+def parity(t):
+    a = [x for x in t if x]
+    return sum(a[i] > a[j] for i in range(len(a)) for j in range(i + 1, len(a))) + (t.index(0) // n if n % 2 == 0 else 0)
+def nbrs(s):
+    b = s.index(0); r, c = divmod(b, n)
+    for dr, dc, m in ((-1, 0, "Up"), (1, 0, "Down"), (0, -1, "Left"), (0, 1, "Right")):
+        if 0 <= r + dr < n and 0 <= c + dc < n:
+            t = list(s); k = (r + dr) * n + c + dc; t[b], t[k] = t[k], t[b]; yield tuple(t), m
+def astar(h):
+    pq = [(h(start), 0, start)]; g = {start: 0}; par = {start: None}; done = set(); exp = 0
+    while pq:
+        f, gc, s = heapq.heappop(pq)
+        if s in done: continue
+        done.add(s); exp += 1
+        if s == goal:
+            return gc, exp, par
+        for t, m in nbrs(s):
+            if t not in g or gc + 1 < g[t]:
+                g[t] = gc + 1; par[t] = (s, m); heapq.heappush(pq, (gc + 1 + h(t), gc + 1, t))
+    return None
+if parity(start) % 2 != parity(goal) % 2: print("Unsolvable puzzle"); raise SystemExit
+for name, h in (("Misplaced tiles", misplaced), ("Manhattan distance", manhattan)):
+    cost, exp, par = astar(h)
+    s, moves = goal, []
+    while par[s]: s, m = par[s]; moves.append(m)
+    print(f"\nHeuristic: {name}\nSteps: {cost}  Nodes expanded: {exp}\nMoves: {' -> '.join(moves[::-1])}")
+
+Sample IO:
+----------
+Grid size (2 = 4-puzzle, 3 = 8-puzzle): 2
+Start state (row-wise, 0 = blank): 3 1 2 0
+Goal state (row-wise, 0 = blank): 1 2 3 0
+
+Heuristic: Misplaced tiles
+Steps: 4  Nodes expanded: 6
+Moves: Left -> Up -> Right -> Down
+
+Heuristic: Manhattan distance
+Steps: 4  Nodes expanded: 5
+Moves: Left -> Up -> Right -> Down
+
+Sample IO:
+----------
+Grid size (2 = 4-puzzle, 3 = 8-puzzle): 3
+Start state (row-wise, 0 = blank): 2 8 1 4 3 0 7 6 5
+Goal state (row-wise, 0 = blank): 1 2 3 8 0 4 7 6 5
+
+Heuristic: Misplaced tiles
+Steps: 11  Nodes expanded: 74
+Moves: Left -> Left -> Up -> Right -> Right -> Down -> Left -> Left -> Up -> Right -> Down
+
+Heuristic: Manhattan distance
+Steps: 11  Nodes expanded: 25
+Moves: Left -> Left -> Up -> Right -> Right -> Down -> Left -> Left -> Up -> Right -> Down
+
+==============================================================================
+4. WUMPUS WORLD - PITS AND GOLD USING PROPOSITIONAL LOGIC
+==============================================================================
+(Covers: Wumpus world pit and gold)
+Symbols P(r,c)=pit. KB: visited cell has no pit; Breeze(x) <=> OR(pit in adjacent cells). Entailment checked by enumerating all models.
+Glitter in a visited cell means gold is there.
+
+from itertools import product
+N = int(input("Grid size N: "))
+k = int(input("Number of visited cells: "))
+vis = {}
+for _ in range(k):
+    r, c, b, g = map(int, input("row col breeze(0/1) glitter(0/1): ").split())
+    vis[(r, c)] = (b, g)
+cells = [(r, c) for r in range(1, N + 1) for c in range(1, N + 1)]
+idx = {x: i for i, x in enumerate(cells)}
+def adj(r, c): return [(a, b) for a, b in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)) if (a, b) in idx]
+# KB: visited cell has no pit ; Breeze(x) <=> OR(Pit in neighbours of x)
+def kb(m): return all(not m[idx[x]] and bool(b) == any(m[idx[y]] for y in adj(*x)) for x, (b, g) in vis.items())
+models = [m for m in product([0, 1], repeat=len(cells)) if kb(m)]
+if not models: print("KB inconsistent"); raise SystemExit
+print("\nPit inference (entailment by model checking):")
+for x in cells:
+    v = {m[idx[x]] for m in models}
+    print(x, "PIT (KB entails P)" if v == {1} else "SAFE (KB entails ~P)" if v == {0} else "unknown")
+gold = [x for x, (b, g) in vis.items() if g]
+if gold: print("\nGold found at:", gold)
+else:
+    cand = [x for x in cells if x not in vis and {m[idx[x]] for m in models} != {1}]
+    print("\nNo glitter seen. Gold (assuming exactly one) must be in:", cand[0] if len(cand) == 1 else cand)
+
+Sample IO:
+----------
+Grid size N: 4
+Number of visited cells: 4
+row col breeze(0/1) glitter(0/1): 1 1 0 0
+row col breeze(0/1) glitter(0/1): 2 1 1 0
+row col breeze(0/1) glitter(0/1): 1 2 1 0
+row col breeze(0/1) glitter(0/1): 2 2 0 1
+
+Pit inference (entailment by model checking):
+(1, 1) SAFE (KB entails ~P)
+(1, 2) SAFE (KB entails ~P)
+(1, 3) PIT (KB entails P)
+(1, 4) unknown
+(2, 1) SAFE (KB entails ~P)
+(2, 2) SAFE (KB entails ~P)
+(2, 3) SAFE (KB entails ~P)
+(2, 4) unknown
+(3, 1) PIT (KB entails P)
+(3, 2) SAFE (KB entails ~P)
+(3, 3) unknown
+(3, 4) unknown
+(4, 1) unknown
+(4, 2) unknown
+(4, 3) unknown
+(4, 4) unknown
+
+Gold found at: [(2, 2)]
+
+==============================================================================
+5. UNIFORM COST SEARCH (goal state / ambulance routing / delivery drone)
+==============================================================================
+(Covers: UCS to reach goal state; Ambulance routing UCS nearest hospital; drone weighted graph minimum battery)
+Edge cost = distance, time or battery units. Several goals are allowed (hospitals) - UCS returns the cheapest one.
+Samples: 1) general graph  2) ambulance (hospitals H1 H2)  3) drone (cost = battery).
+
+import heapq
+e = int(input("Number of edges: "))
+g = {}
+print("Enter edges as: u v cost")
+for _ in range(e):
+    u, v, w = input().split(); w = float(w)
+    g.setdefault(u, []).append((v, w)); g.setdefault(v, []).append((u, w))   # undirected
+start = input("Start node: ")
+goals = set(input("Goal node(s), space separated: ").split())
+pq = [(0, start, [start])]; seen = set()
+while pq:
+    c, u, p = heapq.heappop(pq)
+    if u in seen: continue
+    seen.add(u)
+    if u in goals: print("Nearest goal:", u, "\nPath:", " -> ".join(p), "\nTotal cost:", c); break
+    for v, w in g.get(u, []):
+        if v not in seen: heapq.heappush(pq, (c + w, v, p + [v]))
+else: print("Goal not reachable")
+
+Sample IO:
+----------
+Number of edges: 7
+Enter edges as: u v cost
+A B 4
+A C 2
+B D 5
+C D 8
+C E 10
+D F 2
+E F 3
+Start node: A
+Goal node(s), space separated: F
+Nearest goal: F 
+Path: A -> B -> D -> F 
+Total cost: 11.0
+
+Sample IO:
+----------
+Number of edges: 9
+Enter edges as: u v cost
+Amb J1 3
+Amb J2 5
+J1 J3 4
+J2 J3 1
+J1 H1 9
+J3 H1 5
+J2 H2 8
+J3 H2 6
+J1 J2 2
+Start node: Amb
+Goal node(s), space separated: H1 H2
+Nearest goal: H1 
+Path: Amb -> J1 -> J2 -> J3 -> H1 
+Total cost: 11.0
+
+Sample IO:
+----------
+Number of edges: 6
+Enter edges as: u v cost
+Base A 4
+Base B 2
+A Dest 3
+B A 1
+B Dest 7
+A C 2
+Start node: Base
+Goal node(s), space separated: Dest
+Nearest goal: Dest 
+Path: Base -> B -> A -> Dest 
+Total cost: 6.0
+
+==============================================================================
+6. SIMULATED ANNEALING (travelling salesman)
+==============================================================================
+(Covers: simulated annealing to reach the goal state)
+
+import random, math
+n = int(input("Number of cities: "))
+pts = [tuple(map(float, input(f"x y of city {i}: ").split())) for i in range(n)]
+T = float(input("Initial temperature: ")); cool = float(input("Cooling rate (e.g. 0.995): ")); Tmin = float(input("Final temperature: "))
+d = lambda t: sum(math.dist(pts[t[i]], pts[t[(i + 1) % n]]) for i in range(n))
+cur = list(range(n)); random.shuffle(cur); best = cur[:]
+print("Initial tour length:", round(d(cur), 3))
+while T > Tmin:
+    i, j = sorted(random.sample(range(n), 2))
+    new = cur[:i] + cur[i:j + 1][::-1] + cur[j + 1:]       # 2-opt neighbour
+    delta = d(new) - d(cur)
+    if delta < 0 or random.random() < math.exp(-delta / T): cur = new
+    if d(cur) < d(best): best = cur[:]
+    T *= cool
+print("Best tour:", best + [best[0]], "\nLength:", round(d(best), 3))
+
+Sample IO:
+----------
+Number of cities: 6
+x y of city 0: 0 0
+x y of city 1: 3 1
+x y of city 2: 6 0
+x y of city 3: 6 5
+x y of city 4: 3 6
+x y of city 5: 0 5
+Initial temperature: 100
+Cooling rate (e.g. 0.995): 0.995
+Final temperature: 0.01
+Initial tour length: 33.653
+Best tour: [1, 2, 3, 4, 5, 0, 1] 
+Length: 22.649
+
+==============================================================================
+7. PEAS FRAMEWORK - SELF DRIVING CAR
+==============================================================================
+Agent type: autonomous (self-driving) car
+
+P (Performance measure):
+  Safe driving (no collisions / accidents), reaching the destination, minimum travel time,
+  obeying traffic rules, fuel / battery efficiency, passenger comfort (smooth ride).
+E (Environment):
+  Roads, lanes, intersections, other vehicles, pedestrians, cyclists, traffic signals and signs,
+  weather (rain, fog), lighting (day/night), road condition, maps, passengers.
+  (Partially observable, stochastic, sequential, dynamic, continuous, multi-agent.)
+A (Actuators):
+  Steering, accelerator, brake, gear, indicators, headlights, wipers, horn, display / voice alerts.
+S (Sensors):
+  Cameras, LiDAR, radar, ultrasonic sensors, GPS, IMU, speedometer, odometer, wheel encoders,
+  microphone, V2X communication.
+
+==============================================================================
+8. NAIVE BAYES ON 5 REAL-WORLD DATASETS (Gaussian NB written from scratch)
+==============================================================================
+(Covers: Naive Bayes classification for real-world application using 5 datasets; Naive Bayes on any dataset)
+Datasets (built into scikit-learn, no download): Iris, Wine, Breast cancer, Digits, Diabetes. Accuracy varies a little per run (random split).
+
+import numpy as np
+from sklearn import datasets as D
+from sklearn.model_selection import train_test_split
+class GaussianNB:                      # Naive Bayes implemented from scratch
+    def fit(s, X, y):
+        s.c = np.unique(y)
+        s.m = np.array([X[y == k].mean(0) for k in s.c])
+        s.v = np.array([X[y == k].var(0) for k in s.c]) + 1e-9 * X.var(0).max()
+        s.p = np.array([np.mean(y == k) for k in s.c]); return s
+    def predict(s, X):
+        ll = [np.log(s.p[i]) - 0.5 * np.sum(np.log(2 * np.pi * s.v[i]) + (X - s.m[i]) ** 2 / s.v[i], axis=1) for i in range(len(s.c))]
+        return s.c[np.argmax(ll, axis=0)]
+diab = D.load_diabetes(); diab.target = (diab.target > np.median(diab.target)).astype(int)   # high / low progression
+sets = [("Iris flower species", D.load_iris()), ("Wine cultivar", D.load_wine()),
+        ("Breast cancer diagnosis", D.load_breast_cancer()), ("Handwritten digits", D.load_digits()),
+        ("Diabetes progression (high/low)", diab)]
+ts = float(input("Test size fraction (e.g. 0.3): "))
+for name, d in sets:
+    Xtr, Xte, ytr, yte = train_test_split(d.data, d.target, test_size=ts, stratify=d.target)
+    acc = np.mean(GaussianNB().fit(Xtr, ytr).predict(Xte) == yte)
+    print(f"{name:35s} samples={len(d.data):5d} features={d.data.shape[1]:3d} classes={len(set(d.target))}  accuracy={acc:.3f}")
+
+Sample IO:
+----------
+Test size fraction (e.g. 0.3): 0.3
+Iris flower species                 samples=  150 features=  4 classes=3  accuracy=0.978
+Wine cultivar                       samples=  178 features= 13 classes=3  accuracy=0.981
+Breast cancer diagnosis             samples=  569 features= 30 classes=2  accuracy=0.947
+Handwritten digits                  samples= 1797 features= 64 classes=10  accuracy=0.852
+Diabetes progression (high/low)     samples=  442 features= 10 classes=2  accuracy=0.699
+
+==============================================================================
+9. NAIVE BAYES SPAM / NOT SPAM CLASSIFIER WITH ACCURACY
+==============================================================================
+(Covers: classify email as spam or not spam and evaluate accuracy)
+Multinomial Naive Bayes with Laplace smoothing written from scratch. Input file spam.csv (label,text) - use any dataset in this format. File used in the sample:
+
+    label,text
+    spam,Win a free iPhone now click here
+    spam,Congratulations you won $1000 claim your prize
+    spam,Free money offer limited time act now
+    spam,Cheap meds online buy now discount
+    spam,You have been selected for a free gift card
+    spam,Urgent claim your cash prize today
+    spam,Get rich quick free offer click now
+    spam,Exclusive deal buy one get one free
+    spam,Winner winner claim free vacation now
+    spam,Lowest price pills discount order now
+    spam,Earn $5000 weekly from home click here
+    spam,Final notice you won free cash prize
+    ham,Hi are we meeting for lunch tomorrow
+    ham,Please find the attached project report
+    ham,Meeting rescheduled to 3 pm on Monday
+    ham,Can you send me the notes from class
+    ham,Thanks for your help with the assignment
+    ham,Dinner at my place this weekend
+    ham,Reminder submit the lab record on Friday
+    ham,Happy birthday hope you have a great day
+    ham,The team meeting agenda is attached
+    ham,Let us discuss the project deadline tomorrow
+    ham,Are you coming to the college fest
+    ham,Please review the document and reply
+    spam,Claim your free lottery winnings now
+    spam,Buy cheap watches discount sale today
+    spam,Click here for free credit offer
+    spam,You are a lucky winner claim cash now
+    ham,Can we reschedule the lab session
+    ham,Please send the assignment by tonight
+    ham,See you at the library after class
+    ham,Mom called about dinner tonight
+    ham,Here are the slides from the lecture
+    ham,Let us meet to discuss the exam schedule
+    ham,Thanks for the notes they were very helpful
+    ham,Did you finish the programming homework
+
+import csv, math, random, re
+from collections import Counter
+path = input("CSV file (columns: label,text ; label = spam/ham): ")
+ts = float(input("Test size fraction (e.g. 0.3): "))
+tok = lambda t: re.findall(r"[a-z0-9$]+", t.lower())
+rows = [(r["label"].strip().lower(), tok(r["text"])) for r in csv.DictReader(open(path))]
+random.shuffle(rows); k = int(len(rows) * ts); test, train = rows[:k], rows[k:]
+cls = sorted({l for l, _ in train}); cnt = {c: Counter() for c in cls}; docs = Counter(l for l, _ in train)
+for l, w in train: cnt[l].update(w)
+V = len({w for c in cls for w in cnt[c]})
+def predict(words):   # multinomial Naive Bayes with Laplace smoothing
+    sc = {c: math.log(docs[c] / len(train)) + sum(math.log((cnt[c][w] + 1) / (sum(cnt[c].values()) + V)) for w in words) for c in cls}
+    return max(sc, key=sc.get)
+pred = [predict(w) for _, w in test]
+acc = sum(p == l for p, (l, _) in zip(pred, test)) / len(test)
+print(f"Train={len(train)} Test={len(test)}  Accuracy={acc:.3f}")
+tp = sum(p == l == "spam" for p, (l, _) in zip(pred, test)); fp = sum(p == "spam" != l for p, (l, _) in zip(pred, test)); fn = sum(p != "spam" == l for p, (l, _) in zip(pred, test))
+print("Precision(spam)=", round(tp / (tp + fp), 3) if tp + fp else "n/a", " Recall(spam)=", round(tp / (tp + fn), 3) if tp + fn else "n/a")
+print("Email is:", predict(tok(input("Enter an email to classify: "))))
+
+Sample IO:
+----------
+CSV file (columns: label,text ; label = spam/ham): spam.csv
+Test size fraction (e.g. 0.3): 0.3
+Train=26 Test=10  Accuracy=1.000
+Precision(spam)= 1.0  Recall(spam)= 1.0
+Enter an email to classify: Free prize click now to claim your cash
+Email is: spam
+
+==============================================================================
+10. WATER JUG PROBLEM USING DFS
+==============================================================================
+(Covers: water jug problem using DFS / suitable search algorithm)
+Capacities and target are typed at run time. (DFS gives a valid, not necessarily shortest, path. Replace the recursion with a queue for BFS.)
+
+import sys
+sys.setrecursionlimit(10000)
+a = int(input("Capacity of jug A: ")); b = int(input("Capacity of jug B: ")); t = int(input("Target amount: "))
+def nxt(x, y):
+    p = min(x, b - y); q = min(y, a - x)
+    return [(a, y), (x, b), (0, y), (x, 0), (x - p, y + p), (x + q, y - q)]
+seen = set()
+def dfs(s, path):
+    seen.add(s)
+    if t in s: return path
+    for n in nxt(*s):
+        if n not in seen:
+            r = dfs(n, path + [n])
+            if r: return r
+if t > max(a, b): print("Impossible")
+else:
+    r = dfs((0, 0), [(0, 0)])
+    print("Solution (A, B):" if r else "No solution")
+    for s in r or []: print(s)
+
+Sample IO:
+----------
+Capacity of jug A: 3
+Capacity of jug B: 5
+Target amount: 4
+Solution (A, B):
+(0, 0)
+(3, 0)
+(3, 5)
+(0, 5)
+(3, 2)
+(0, 2)
+(2, 0)
+(2, 5)
+(3, 4)
+
+==============================================================================
+11. WATER JUG AS A CONSTRAINT SATISFACTION PROBLEM (CSP)
+==============================================================================
+(Covers: CSP formulation of water jug with defined constraints and goal)
+Variables S0..Sk (state after each step). Domain = (a,b) with 0<=a<=capA, 0<=b<=capB. Constraints: S0=(0,0), each S(i+1) is a legal move from S(i), no repeated state, target in S(k).
+
+a = int(input("Capacity of jug A: ")); b = int(input("Capacity of jug B: ")); t = int(input("Target amount (in either jug): "))
+dom = [(x, y) for x in range(a + 1) for y in range(b + 1)]            # domain of every variable S_i
+def ok(s, n):                                                          # transition constraint: n must follow from s by a legal pour/fill/empty
+    p = min(s[0], b - s[1]); q = min(s[1], a - s[0])
+    return n in [(a, s[1]), (s[0], b), (0, s[1]), (s[0], 0), (s[0] - p, s[1] + p), (s[0] + q, s[1] - q)] and n != s
+def solve(path, k):                                                    # backtracking over S_0 .. S_k
+    if len(path) == k + 1: return path if t in path[-1] else None      # goal constraint on S_k
+    for n in dom:
+        if n not in path and ok(path[-1], n):                          # all-different + transition
+            r = solve(path + [n], k)
+            if r: return r
+for k in range(1, len(dom)):                                           # iterative deepening on number of steps
+    r = solve([(0, 0)], k)                                             # initial constraint S_0 = (0,0)
+    if r: print("Variables S0..S%d =" % k, r); break
+else: print("No solution")
+
+Sample IO:
+----------
+Capacity of jug A: 3
+Capacity of jug B: 5
+Target amount (in either jug): 4
+Variables S0..S6 = [(0, 0), (0, 5), (3, 2), (0, 2), (2, 0), (2, 5), (3, 4)]
+
+==============================================================================
+12. HILL CLIMBING (N-Queens) WITH RANDOM RESTART
+==============================================================================
+(Covers: hill climbing for any application; N-Queens using hill climbing)
+
+import random
+n = int(input("N (number of queens): ")); R = int(input("Max random restarts: "))
+def h(s): return sum(s[i] == s[j] or abs(s[i] - s[j]) == j - i for i in range(n) for j in range(i + 1, n))  # attacking pairs
+for r in range(R + 1):
+    s = [random.randrange(n) for _ in range(n)]
+    while True:
+        cost = h(s)
+        nb = min((h(s[:c] + [v] + s[c + 1:]), c, v) for c in range(n) for v in range(n) if v != s[c])
+        if nb[0] >= cost: break                       # local optimum reached
+        s[nb[1]] = nb[2]
+    print(f"Restart {r}: attacking pairs = {h(s)}")
+    if h(s) == 0: break
+print("State (row of queen in each column):", s)
+for i in range(n): print(" ".join("Q" if s[c] == i else "." for c in range(n)))
+
+Sample IO:
+----------
+N (number of queens): 8
+Max random restarts: 20
+Restart 0: attacking pairs = 1
+Restart 1: attacking pairs = 2
+Restart 2: attacking pairs = 1
+Restart 3: attacking pairs = 2
+Restart 4: attacking pairs = 0
+State (row of queen in each column): [1, 6, 4, 7, 0, 3, 5, 2]
+. . . . Q . . .
+Q . . . . . . .
+. . . . . . . Q
+. . . . . Q . .
+. . Q . . . . .
+. . . . . . Q .
+. Q . . . . . .
+. . . Q . . . .
+
+==============================================================================
+13. LOCAL SEARCH FOR TRAVELLING SALESMAN (hill climbing, 2-opt neighbours)
+==============================================================================
+(Covers: local search algorithm using TSP or job scheduling)
+
+import random, math
+n = int(input("Number of cities: "))
+pts = [tuple(map(float, input(f"x y of city {i}: ").split())) for i in range(n)]
+R = int(input("Number of random restarts: "))
+d = lambda t: sum(math.dist(pts[t[i]], pts[t[(i + 1) % n]]) for i in range(n))
+best = None
+for _ in range(R):
+    s = list(range(n)); random.shuffle(s)
+    improved = True
+    while improved:                                    # steepest-ascent hill climbing with 2-opt neighbours
+        improved = False
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                t = s[:i] + s[i:j + 1][::-1] + s[j + 1:]
+                if d(t) < d(s) - 1e-12: s, improved = t, True
+    if best is None or d(s) < d(best): best = s
+print("Best tour:", best + [best[0]], "\nLength:", round(d(best), 3))
+
+Sample IO:
+----------
+Number of cities: 6
+x y of city 0: 0 0
+x y of city 1: 3 1
+x y of city 2: 6 0
+x y of city 3: 6 5
+x y of city 4: 3 6
+x y of city 5: 0 5
+Number of random restarts: 10
+Best tour: [1, 2, 3, 4, 5, 0, 1] 
+Length: 22.649
+
+==============================================================================
+14. ALPHA-BETA PRUNING
+==============================================================================
+(Covers: alpha beta pruning)
+Complete tree: depth d, branching b, leaves typed left to right. Root is MAX.
+
+dep = int(input("Tree depth: ")); br = int(input("Branching factor: "))
+leaves = list(map(int, input(f"{br ** dep} leaf values (left to right): ").split()))
+pruned = []
+def ab(d, i, a, b, mx, path):
+    if d == dep: return leaves[i]
+    v = float("-inf") if mx else float("inf")
+    for k in range(br):
+        c = ab(d + 1, i * br + k, a, b, not mx, path + "." + str(k))
+        v = max(v, c) if mx else min(v, c)
+        a, b = (max(a, v), b) if mx else (a, min(b, v))
+        if a >= b:
+            if k < br - 1: pruned.append(f"under node {path}: child {k + 1} to {br - 1} pruned")
+            break
+    return v
+print("Optimal value at root (MAX):", ab(0, 0, float("-inf"), float("inf"), True, "root"))
+print("Pruned branches:", pruned or "none")
+
+Sample IO:
+----------
+Tree depth: 3
+Branching factor: 2
+8 leaf values (left to right): 3 5 6 9 1 2 0 -1
+Optimal value at root (MAX): 5
+Pruned branches: ['under node root.0.1: child 1 to 1 pruned', 'under node root.1: child 1 to 1 pruned']
+
+==============================================================================
+15. PROPOSITIONAL LOGIC - ENTAILMENT / DERIVING A CONCLUSION (truth-table inference)
+==============================================================================
+(Covers: propositional logic inference, test entailment with simple KB, derive conclusion sentence)
+Sentences use ~ & | => <=> and parentheses. Sample 1: Anita works hard (W), W=>S, S=>P  therefore P. Sample 2: modus tollens.
+
+import re
+from itertools import product
+def parse(s):                                   # grammar:  <=>  lowest, then =>, |, &, ~   (use parentheses)
+    t = re.findall(r"<=>|=>|[A-Za-z_]\w*|[~&|()]", s); p = [0]
+    def eat(): p[0] += 1; return t[p[0] - 1]
+    def peek(): return t[p[0]] if p[0] < len(t) else None
+    def iff():
+        l = imp()
+        while peek() == "<=>": eat(); r = imp(); l = (lambda a, b: lambda m: a(m) == b(m))(l, r)
+        return l
+    def imp():
+        l = orr()
+        if peek() == "=>": eat(); r = imp(); return (lambda a, b: lambda m: (not a(m)) or b(m))(l, r)
+        return l
+    def orr():
+        l = andd()
+        while peek() == "|": eat(); r = andd(); l = (lambda a, b: lambda m: a(m) or b(m))(l, r)
+        return l
+    def andd():
+        l = neg()
+        while peek() == "&": eat(); r = neg(); l = (lambda a, b: lambda m: a(m) and b(m))(l, r)
+        return l
+    def neg():
+        x = eat()
+        if x == "~": f = neg(); return lambda m: not f(m)
+        if x == "(": f = iff(); eat(); return f
+        return lambda m: m[x]
+    return iff(), set(re.findall(r"[A-Za-z_]\w*", s))
+print("Operators: ~ (not)  & (and)  | (or)  => (implies)  <=> (iff)")
+n = int(input("Number of KB sentences: "))
+kb = [parse(input(f"KB sentence {i + 1}: ")) for i in range(n)]
+q = parse(input("Query sentence: "))
+syms = sorted(set().union(q[1], *[s for _, s in kb]))
+models = [dict(zip(syms, v)) for v in product([False, True], repeat=len(syms))]
+good = [m for m in models if all(f(m) for f, _ in kb)]
+print("Symbols:", syms, "| models satisfying KB:", len(good))
+if all(q[0](m) for m in good): print("KB entails the query (query is TRUE in every model of KB)")
+elif not any(q[0](m) for m in good): print("KB entails the NEGATION of the query")
+else: print("Query is not entailed (undetermined)")
+
+Sample IO:
+----------
+Operators: ~ (not)  & (and)  | (or)  => (implies)  <=> (iff)
+Number of KB sentences: 3
+KB sentence 1: W
+KB sentence 2: W => S
+KB sentence 3: S => P
+Query sentence: P
+Symbols: ['P', 'S', 'W'] | models satisfying KB: 1
+KB entails the query (query is TRUE in every model of KB)
+
+Sample IO:
+----------
+Operators: ~ (not)  & (and)  | (or)  => (implies)  <=> (iff)
+Number of KB sentences: 2
+KB sentence 1: Rain => WetGround
+KB sentence 2: ~WetGround
+Query sentence: ~Rain
+Symbols: ['Rain', 'WetGround'] | models satisfying KB: 1
+KB entails the query (query is TRUE in every model of KB)
+
+==============================================================================
+16. MINIMAX FOR TIC-TAC-TOE (human O vs AI X)
+==============================================================================
+(Covers: minmax for tic tac toe)
+Positions 1-9 are numbered row-wise. Sample shows an invalid move being rejected.
+
+b = [" "] * 9
+W = [(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]
+def win(b, p): return any(all(b[i] == p for i in w) for w in W)
+def minimax(b, ai):                    # +1 AI(X) wins, -1 human(O) wins, 0 draw
+    if win(b, "X"): return 1
+    if win(b, "O"): return -1
+    if " " not in b: return 0
+    sc = []
+    for i in range(9):
+        if b[i] == " ":
+            b[i] = "X" if ai else "O"; sc.append(minimax(b, not ai)); b[i] = " "
+    return max(sc) if ai else min(sc)
+def show(): print("\n".join(" | ".join(b[r*3:r*3+3]) for r in range(3)), "\n")
+human_first = input("Do you want to play first? (y/n): ").lower() == "y"
+turn = human_first
+while not (win(b, "X") or win(b, "O") or " " not in b):
+    if turn:
+        m = int(input("Your move (1-9): ")) - 1
+        if m not in range(9) or b[m] != " ": print("Invalid"); continue
+        b[m] = "O"
+    else:
+        best = max((i for i in range(9) if b[i] == " "), key=lambda i: (b.__setitem__(i, "X"), minimax(b, False), b.__setitem__(i, " "))[1])
+        b[best] = "X"; print("AI plays", best + 1)
+    show(); turn = not turn
+print("AI (X) wins!" if win(b, "X") else "You (O) win!" if win(b, "O") else "Draw!")
+
+Sample IO:
+----------
+Do you want to play first? (y/n): n
+AI plays 1
+X |   |  
+  |   |  
+  |   |   
+
+Your move (1-9): 5
+X |   |  
+  | O |  
+  |   |   
+
+AI plays 2
+X | X |  
+  | O |  
+  |   |   
+
+Your move (1-9): 1
+Invalid
+Your move (1-9): 9
+X | X |  
+  | O |  
+  |   | O 
+
+AI plays 3
+X | X | X
+  | O |  
+  |   | O 
+
+AI (X) wins!
+
+==============================================================================
+17. CART-POLE: Q-LEARNING AGENT (gymnasium)
+==============================================================================
+(Covers: cart pole implementation and train the agent)
+Needs: pip install gymnasium numpy. State (4 values) is discretised into bins; epsilon-greedy tabular Q-learning. Max reward per episode = 500.
+
+import gymnasium as gym, numpy as np
+episodes = int(input("Training episodes: ")); alpha = float(input("Learning rate: ")); gamma = float(input("Discount factor: "))
+env = gym.make("CartPole-v1")
+bins = (1, 1, 6, 12); lo = np.array([-2.4, -3, -0.21, -3.5]); hi = -lo
+def disc(o):
+    r = np.clip((o - lo) / (hi - lo), 0, 0.9999); return tuple((r * bins).astype(int))
+Q = np.zeros(bins + (2,)); eps = 1.0
+for ep in range(episodes):
+    o, _ = env.reset(); s = disc(o); done = False; tot = 0
+    while not done:
+        a = env.action_space.sample() if np.random.rand() < eps else int(np.argmax(Q[s]))
+        o, r, term, trunc, _ = env.step(a); s2 = disc(o); done = term or trunc; tot += r
+        Q[s + (a,)] += alpha * (r + gamma * (0 if term else np.max(Q[s2])) - Q[s + (a,)]); s = s2
+    eps = max(0.01, eps * 0.995)
+    if (ep + 1) % max(1, episodes // 10) == 0: print(f"Episode {ep + 1}: reward {tot:.0f}  epsilon {eps:.3f}")
+res = []
+for _ in range(10):                                     # evaluate greedy policy
+    o, _ = env.reset(); done = False; tot = 0
+    while not done:
+        o, r, term, trunc, _ = env.step(int(np.argmax(Q[disc(o)]))); done = term or trunc; tot += r
+    res.append(tot)
+print("Test rewards over 10 episodes:", res, "Average:", np.mean(res))
+
+Sample IO:
+----------
+Training episodes: 1500
+Learning rate: 0.1
+Discount factor: 0.99
+Episode 150: reward 80  epsilon 0.471
+Episode 300: reward 192  epsilon 0.222
+Episode 450: reward 145  epsilon 0.105
+Episode 600: reward 45  epsilon 0.049
+Episode 750: reward 317  epsilon 0.023
+Episode 900: reward 146  epsilon 0.011
+Episode 1050: reward 31  epsilon 0.010
+Episode 1200: reward 500  epsilon 0.010
+Episode 1350: reward 500  epsilon 0.010
+Episode 1500: reward 225  epsilon 0.010
+Test rewards over 10 episodes: [500.0, 235.0, 500.0, 200.0, 201.0, 369.0, 397.0, 366.0, 436.0, 257.0] Average: 346.1
+
+==============================================================================
+18. SUDOKU SOLVER (CSP: backtracking + most-constrained-variable)
+==============================================================================
+(Covers: constraint satisfaction problem - sudoku solver)
+
+print("Enter 9 rows of 9 digits (use 0 or . for blank):")
+g = [[0 if ch in "0." else int(ch) for ch in input().strip()] for _ in range(9)]
+def cand(r, c):   # domain = digits not used in row, column, 3x3 box (constraints)
+    used = set(g[r]) | {g[i][c] for i in range(9)} | {g[r//3*3+i][c//3*3+j] for i in range(3) for j in range(3)}
+    return [d for d in range(1, 10) if d not in used]
+def solve():      # backtracking + MRV (most constrained variable first)
+    e = [(len(cand(r, c)), r, c) for r in range(9) for c in range(9) if g[r][c] == 0]
+    if not e: return True
+    _, r, c = min(e)
+    for d in cand(r, c):
+        g[r][c] = d
+        if solve(): return True
+        g[r][c] = 0
+    return False
+if solve():
+    print("\nSolution:")
+    for r in g: print(" ".join(map(str, r)))
+else: print("No solution")
+
+Sample IO:
+----------
+Enter 9 rows of 9 digits (use 0 or . for blank):
+53..7....
+6..195...
+.98....6.
+8...6...3
+4..8.3..1
+7...2...6
+.6....28.
+...419..5
+....8..79
+
+Solution:
+5 3 4 6 7 8 9 1 2
+6 7 2 1 9 5 3 4 8
+1 9 8 3 4 2 5 6 7
+8 5 9 7 6 1 4 2 3
+4 2 6 8 5 3 7 9 1
+7 1 3 9 2 4 8 5 6
+9 6 1 5 3 7 2 8 4
+2 8 7 4 1 9 6 3 5
+3 4 5 2 8 6 1 7 9
+
+==============================================================================
+19. BFS AND DFS FOR A GIVEN TREE
+==============================================================================
+(Covers: implement BFS and DFS for the given tree)
+Children are visited in the order the edges are typed.
+
+from collections import deque
+e = int(input("Number of edges: ")); t = {}
+print("Enter edges as: parent child")
+for _ in range(e):
+    p, c = input().split(); t.setdefault(p, []).append(c)
+root = input("Root node: "); goal = input("Goal node: ")
+def bfs():
+    q = deque([[root]]); order = []
+    while q:
+        p = q.popleft(); order.append(p[-1])
+        if p[-1] == goal: return order, p
+        q.extend(p + [c] for c in t.get(p[-1], []))
+    return order, None
+def dfs():
+    st = [[root]]; order = []
+    while st:
+        p = st.pop(); order.append(p[-1])
+        if p[-1] == goal: return order, p
+        st.extend(p + [c] for c in reversed(t.get(p[-1], [])))
+    return order, None
+for name, f in (("BFS", bfs), ("DFS", dfs)):
+    o, p = f(); print(f"{name} visit order: {' '.join(o)}\n{name} path to goal: {' -> '.join(p) if p else 'not found'}")
+
+Sample IO:
+----------
+Number of edges: 7
+Enter edges as: parent child
+A B
+A C
+B D
+B E
+C F
+C G
+E H
+Root node: A
+Goal node: H
+BFS visit order: A B C D E F G H
+BFS path to goal: A -> B -> E -> H
+DFS visit order: A B D E H
+DFS path to goal: A -> B -> E -> H
+
+==============================================================================
+20. A* ALGORITHM FOR GRID MAP
+==============================================================================
+(Covers: A* algorithm for grid map)
+S start, G goal, # wall, . free. Moves: 4 directions, cost 1, heuristic = Manhattan distance. * marks the path.
+
+import heapq
+r, c = map(int, input("Rows Cols: ").split())
+print("Enter grid rows (S=start, G=goal, #=wall, .=free):")
+g = [list(input().strip()) for _ in range(r)]
+find = lambda ch: next((i, j) for i in range(r) for j in range(c) if g[i][j] == ch)
+s, goal = find("S"), find("G")
+h = lambda p: abs(p[0] - goal[0]) + abs(p[1] - goal[1])             # Manhattan heuristic
+pq = [(h(s), 0, s)]; cost = {s: 0}; par = {s: None}; done = set()
+while pq:
+    f, gc, u = heapq.heappop(pq)
+    if u in done: continue
+    done.add(u)
+    if u == goal: break
+    for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        v = (u[0] + dr, u[1] + dc)
+        if 0 <= v[0] < r and 0 <= v[1] < c and g[v[0]][v[1]] != "#" and gc + 1 < cost.get(v, 1e9):
+            cost[v] = gc + 1; par[v] = u; heapq.heappush(pq, (gc + 1 + h(v), gc + 1, v))
+if goal not in par: print("No path")
+else:
+    p, u = [], goal
+    while u: p.append(u); u = par[u]
+    for i, j in p[1:-1]: g[i][j] = "*"
+    print("Path length:", len(p) - 1, "\nPath:", p[::-1]); print("\n".join("".join(x) for x in g))
+
+Sample IO:
+----------
+Rows Cols: 5 6
+Enter grid rows (S=start, G=goal, #=wall, .=free):
+S..#..
+.#.#.#
+.#...#
+.####.
+....G.
+Path length: 8 
+Path: [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (4, 1), (4, 2), (4, 3), (4, 4)]
+S..#..
+*#.#.#
+*#...#
+*####.
+****G.
+
+
+==============================================================================
+PROLOG PROGRAMS (queries are typed at the ?- prompt; sample shows every solution, press ; in swipl)
+==============================================================================
+
+==============================================================================
+21. PROLOG KNOWLEDGE BASE (family relations)
+==============================================================================
+(Covers: knowledge base using Prolog)
+Knowledge base for the given statements:
+  Tom is a parent of Bob and Liz; Bob is a parent of Ann and Pat; Pat is a parent of Jim.
+  Tom, Bob, Pat, Jim are male; Liz, Ann are female.
+  father, mother, grandparent, sibling, ancestor rules.
+
+--- file: kb_family.pl ---
+
+% Knowledge base: family relations
+parent(tom, bob).   parent(tom, liz).
+parent(bob, ann).   parent(bob, pat).
+parent(pat, jim).
+male(tom). male(bob). male(pat). male(jim).
+female(liz). female(ann).
+father(X, Y) :- parent(X, Y), male(X).
+mother(X, Y) :- parent(X, Y), female(X).
+grandparent(X, Z) :- parent(X, Y), parent(Y, Z).
+sibling(X, Y) :- parent(P, X), parent(P, Y), X \= Y.
+ancestor(X, Y) :- parent(X, Y).
+ancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).
+
+Sample IO:
+----------
+?- father(tom,X).
+X = bob
+X = liz
+?- grandparent(tom,Z).
+Z = ann
+Z = pat
+?- sibling(ann,W).
+W = pat
+?- ancestor(tom,jim).
+true.
+?- ancestor(liz,jim).
+false.
+?- ancestor(X,jim).
+X = pat
+X = tom
+X = bob
+
+==============================================================================
+22. PROLOG KB: WORKS HARD -> SUCCEED -> PROMOTED
+==============================================================================
+(Covers: given KB: If a person works hard they succeed. If they succeed they get promoted. Anita works hard.)
+Knowledge base for the given statements:
+  If a person works hard, they succeed.
+  If they succeed, they get promoted.
+  Anita works hard.
+
+--- file: anita.pl ---
+
+% If a person works hard, they succeed. If they succeed, they get promoted. Anita works hard.
+works_hard(anita).
+succeeds(X)  :- works_hard(X).
+promoted(X)  :- succeeds(X).
+
+Sample IO:
+----------
+?- promoted(anita).
+true.
+?- succeeds(X).
+X = anita
+?- promoted(bob).
+false.
+
+==============================================================================
+23. FORWARD CHAINING USING PROLOG
+==============================================================================
+(Covers: forward chaining using prolog)
+Knowledge base for the given statements:
+  Rule: works_hard(X) -> succeeds(X)
+  Rule: succeeds(X) -> promoted(X)
+  Rule: promoted(X) and has_job(X) -> rich(X)
+  Facts are added at run time with add_fact/1, then forward. derives everything new.
+
+--- file: forward.pl ---
+
+% Forward chaining: rule(Head, [Body goals]); facts are added at run time with add_fact/1
+:- dynamic known/1.
+rule(succeeds(X), [works_hard(X)]).
+rule(promoted(X), [succeeds(X)]).
+rule(rich(X),     [promoted(X), has_job(X)]).
+add_fact(F) :- ( known(F) -> true ; assertz(known(F)) ).
+all_known([]).
+all_known([G|Gs]) :- known(G), all_known(Gs).
+forward :- rule(H, B), all_known(B), \+ known(H), assertz(known(H)),
+           format("Derived: ~w  (from ~w)~n", [H, B]), forward.
+forward.
+
+Sample IO:
+----------
+?- add_fact(works_hard(anita)).
+true.
+?- add_fact(has_job(anita)).
+true.
+?- forward.
+Derived: succeeds(anita)  (from [works_hard(anita)])
+Derived: promoted(anita)  (from [succeeds(anita)])
+Derived: rich(anita)  (from [promoted(anita),has_job(anita)])
+true.
+?- known(rich(X)).
+X = anita
+
+==============================================================================
+24. PROLOG - CNF CONVERSION AND RESOLUTION REFUTATION
+==============================================================================
+(Covers: Prolog CNF and Resolution)
+Knowledge base for the given statements:
+  Formulas: and(A,B), or(A,B), not(A), imp(A,B), iff(A,B).
+  KB: works_hard => succeed ; succeed => promoted ; works_hard.
+  Query: promoted (proved by adding not(promoted) and deriving the empty clause []).
+  Negative literal is written n(Atom).
+
+--- file: resolution.pl ---
+
+% CNF conversion and resolution refutation.  Formulas: and(A,B) or(A,B) not(A) imp(A,B) iff(A,B), atoms.
+% Clause = sorted list of literals, negative literal = n(Atom)
+:- dynamic kb/1.
+elim(imp(A,B), or(not(X),Y)) :- !, elim(A,X), elim(B,Y).
+elim(iff(A,B), and(or(not(X),Y), or(not(Y),X))) :- !, elim(A,X), elim(B,Y).
+elim(and(A,B), and(X,Y)) :- !, elim(A,X), elim(B,Y).
+elim(or(A,B),  or(X,Y))  :- !, elim(A,X), elim(B,Y).
+elim(not(A),   not(X))   :- !, elim(A,X).
+elim(A, A).
+nnf(not(not(A)), R)     :- !, nnf(A,R).
+nnf(not(and(A,B)), or(X,Y))  :- !, nnf(not(A),X), nnf(not(B),Y).
+nnf(not(or(A,B)), and(X,Y))  :- !, nnf(not(A),X), nnf(not(B),Y).
+nnf(and(A,B), and(X,Y)) :- !, nnf(A,X), nnf(B,Y).
+nnf(or(A,B),  or(X,Y))  :- !, nnf(A,X), nnf(B,Y).
+nnf(A, A).
+dist(and(A,B), and(X,Y)) :- !, dist(A,X), dist(B,Y).
+dist(or(A,B), R) :- !, dist(A,X), dist(B,Y), dist2(X,Y,R).
+dist(L, L).
+dist2(and(A,B), Y, and(R1,R2)) :- !, dist2(A,Y,R1), dist2(B,Y,R2).
+dist2(X, and(A,B), and(R1,R2)) :- !, dist2(X,A,R1), dist2(X,B,R2).
+dist2(X, Y, or(X,Y)).
+conj(and(A,B), L) :- !, conj(A,L1), conj(B,L2), append(L1,L2,L).
+conj(C, [Ls]) :- disj(C, Ls0), sort(Ls0, Ls).
+disj(or(A,B), L) :- !, disj(A,L1), disj(B,L2), append(L1,L2,L).
+disj(not(A), [n(A)]) :- !.
+disj(A, [A]).
+cnf(F, Cs) :- elim(F,E), nnf(E,N), dist(N,D), conj(D,Cs).
+add_kb(F) :- cnf(F, Cs), forall(member(C,Cs), (kb(C) -> true ; assertz(kb(C)))),
+             format("CNF clauses added: ~w~n", [Cs]).
+neg(n(A), A) :- !.
+neg(A, n(A)).
+taut(C) :- member(L,C), neg(L,N), member(N,C).
+resolve(C1, C2, R) :- select(L,C1,R1), neg(L,NL), select(NL,C2,R2),
+                      append(R1,R2,R0), sort(R0,R), \+ taut(R).
+sat(S) :- findall(R-(A-B), (member(A,S), member(B,S), A @< B, resolve(A,B,R), \+ memberchk(R,S)), Rs0),
+          sort(1, @<, Rs0, Rs), Rs \== [],
+          forall(member(R-(A-B), Rs), format("Resolve ~w and ~w => ~w~n", [A,B,R])),
+          ( memberchk([]-_, Rs) -> true
+          ; findall(R, member(R-_, Rs), Rn), append(Rn, S, S1), sort(S1, S2), sat(S2) ).
+entails(Q) :- cnf(not(Q), NQ), findall(C, kb(C), KB), append(NQ, KB, S0), sort(S0, S),
+              ( sat(S) -> format("KB entails ~w (empty clause derived)~n", [Q])
+              ; format("KB does not entail ~w~n", [Q]) ).
+
+Sample IO:
+----------
+?- add_kb(imp(works_hard,succeed)).
+CNF clauses added: [[succeed,n(works_hard)]]
+true.
+?- add_kb(imp(succeed,promoted)).
+CNF clauses added: [[promoted,n(succeed)]]
+true.
+?- add_kb(works_hard).
+CNF clauses added: [[works_hard]]
+true.
+?- entails(promoted).
+Resolve [promoted,n(succeed)] and [succeed,n(works_hard)] => [promoted,n(works_hard)]
+Resolve [succeed,n(works_hard)] and [works_hard] => [succeed]
+Resolve [promoted,n(succeed)] and [n(promoted)] => [n(succeed)]
+Resolve [succeed] and [n(succeed)] => []
+Resolve [promoted,n(succeed)] and [succeed] => [promoted]
+Resolve [promoted,n(works_hard)] and [n(promoted)] => [n(works_hard)]
+KB entails promoted (empty clause derived)
+true.
+?- entails(rich).
+Resolve [promoted,n(succeed)] and [succeed,n(works_hard)] => [promoted,n(works_hard)]
+Resolve [succeed,n(works_hard)] and [works_hard] => [succeed]
+Resolve [promoted,n(succeed)] and [succeed] => [promoted]
+KB does not entail rich
+true.
+?- cnf(iff(p,q),C).
+C = [[q,n(p)],[p,n(q)]]
+
+==============================================================================
+25. FIRST ORDER LOGIC (Prolog)
+==============================================================================
+(Covers: first order logic)
+Knowledge base for the given statements:
+  forall X: human(X) -> mortal(X).
+  human(socrates), human(plato).
+  forall X: student(X) and studies(X) -> passes(X). student(ravi), studies(ravi).
+  teaches(socrates, plato); knows(X,Y) if X teaches Y or Y teaches X.
+  Universal check: all_humans_mortal  (no human who is not mortal).
+
+--- file: fol.pl ---
+
+% First-order logic knowledge base
+% All humans are mortal. Socrates and Plato are humans. Every student who studies passes. Ravi is a student who studies.
+human(socrates). human(plato).
+mortal(X) :- human(X).
+student(ravi). studies(ravi).
+passes(X) :- student(X), studies(X).
+teaches(socrates, plato).
+knows(X, Y) :- teaches(X, Y).
+knows(X, Y) :- teaches(Y, X).
+% "Someone is mortal" (exists) and "everything human is mortal" (forall) as queries:
+all_humans_mortal :- \+ (human(X), \+ mortal(X)).
+
+Sample IO:
+----------
+?- mortal(socrates).
+true.
+?- mortal(X).
+X = socrates
+X = plato
+?- passes(ravi).
+true.
+?- knows(plato,Y).
+Y = socrates
+?- all_humans_mortal.
+true.s
